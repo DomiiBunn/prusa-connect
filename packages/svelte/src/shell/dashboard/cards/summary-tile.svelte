@@ -129,11 +129,20 @@
     gap: calc(var(--spacing) * 3);
   }
 
-  /* Where the grid gives the card a height, the counts measure it, so a
-     short card on a wall keeps its figures whole. A narrow page stacks the
+  /* Where the grid gives the card a height, each count measures the room
+     left under its heading, so a short card on a wall keeps its figures whole
+     and inside the tile's padding. Measuring the whole grid instead sized the
+     figure without the heading and the card's own padding, and on a two-row
+     tile the cards ran past the bottom of the tile. A narrow page stacks the
      cards at the height of what they hold, and there nothing is measured. */
   @container board (width >= 40rem) {
-    .summary-counts {
+    .summary-counts :global([data-slot='status-card']) {
+      min-block-size: 0;
+    }
+
+    .summary-counts :global([data-slot='card-content']) {
+      flex: 1;
+      min-block-size: 0;
       container-type: size;
     }
   }

@@ -129,11 +129,13 @@
 </Card>
 
 <style>
-  /* The reading follows the card's own size: the card is a size container. */
+  /* The reading follows the room it is given. The caller makes the card's
+     content a size container, so the figure measures the space under the
+     heading and fills most of it with its 1.1 line height. */
   [data-figure='fluid'] {
     font-size: clamp(
       var(--text-2xl),
-      min(28cqi, 55cqb),
+      min(40cqi, 90cqb),
       calc(var(--text-2xl) * 3)
     );
     line-height: 1.1;
