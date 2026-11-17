@@ -60,14 +60,9 @@
     roles.map((role) => ({ value: role, label: t(roleLabelKey(role)) })),
   );
 
-  /**
-   * Role by colour as well as by word. Used once, so a SelectTrigger tone
-   * variant would have one caller.
-   */
-  const ADMIN_TINT = 'border-info bg-info text-info-foreground hover:bg-info';
-
-  const roleTint = (row: PersonRow): string =>
-    row.role === 'admin' ? ADMIN_TINT : '';
+  /** Role by colour as well as by word, as the locked badge shows it. */
+  const roleTone = (row: PersonRow): 'info' | 'default' =>
+    row.role === 'admin' ? 'info' : 'default';
 
   /** Both verdicts lock the same two controls, so both are asked once. */
   const locked = (row: PersonRow): boolean => row.isSelf || row.isLastAdmin;
@@ -101,7 +96,7 @@
     >
       <SelectTrigger
         size="sm"
-        class={roleTint(row)}
+        tone={roleTone(row)}
         aria-label={t('settingsPeople.role.changeFor', { name: row.username })}
       >
         <!-- An account with no role holds none of the options. -->

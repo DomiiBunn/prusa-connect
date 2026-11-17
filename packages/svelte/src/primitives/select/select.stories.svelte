@@ -71,6 +71,21 @@
   </div>
 </Story>
 
+<Story name="Info Tone" asChild>
+  <Select value="mk4s" items={models}>
+    <SelectTrigger size="sm" tone="info" aria-label="Printer model">
+      <SelectValue />
+    </SelectTrigger>
+    <SelectContent>
+      {#each models as model (model.value)}
+        <SelectItem value={model.value} label={model.label}>
+          {model.label}
+        </SelectItem>
+      {/each}
+    </SelectContent>
+  </Select>
+</Story>
+
 <Story name="Shares A Baseline With Input And Button" asChild>
   <div class="flex items-center gap-2">
     <Select value="mk4s" items={mk4sOnly}>

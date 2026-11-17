@@ -432,6 +432,7 @@ export {
   type SelectSeparatorProps,
   SelectTrigger,
   type SelectTriggerProps,
+  type SelectTriggerTone,
   SelectValue,
   type SelectValueProps,
 } from './select';

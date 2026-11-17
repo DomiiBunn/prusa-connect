@@ -13,6 +13,10 @@
 
   React draws the chevron through Radix's `Icon` part. bits-ui has no such
   part, so the glyph sits in the markup.
+
+  A tone is written behind `data-[tone=…]:` and not as a bare utility. A
+  utility with a variant is emitted after every bare one, so `bg-info` there
+  beats the recipe's `bg-transparent` without tailwind-merge or `!important`.
 -->
 <script lang="ts">
   import ChevronDownIcon from '@lucide/svelte/icons/chevron-down';
@@ -22,12 +26,23 @@
     CONTROL_SIZES,
     CONTROL_TRIGGER,
   } from '../control-trigger/control-trigger';
-  import type { SelectTriggerProps } from './types';
+  import type { SelectTriggerProps, SelectTriggerTone } from './types';
+
+  const TONES: Record<SelectTriggerTone, string> = {
+    default: '',
+    info: 'data-[tone=info]:border-info data-[tone=info]:bg-info data-[tone=info]:text-info-foreground data-[tone=info]:hover:bg-info',
+  };
+
+  const CHEVRON_TONES: Record<SelectTriggerTone, string> = {
+    default: '',
+    info: 'text-info-foreground',
+  };
 
   let {
     ref = $bindable(null),
     class: className,
     size = 'md',
+    tone = 'default',
     children,
     ...rest
   }: SelectTriggerProps = $props();
@@ -38,14 +53,16 @@
   role="combobox"
   data-slot="select-trigger"
   data-size={size}
+  data-tone={tone}
   class={[
     CONTROL_TRIGGER,
     CONTROL_SIZES[size],
+    TONES[tone],
     'data-[placeholder]:text-muted-foreground disabled:data-[placeholder]:text-disabled-foreground *:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-2',
     className,
   ]}
   {...rest}
 >
   {@render children?.()}
-  <ChevronDownIcon class="size-4" />
+  <ChevronDownIcon class={['size-4', CHEVRON_TONES[tone]]} />
 </SelectPrimitive.Trigger>

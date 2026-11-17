@@ -18,5 +18,6 @@ export type {
   SelectScrollUpButtonProps,
   SelectSeparatorProps,
   SelectTriggerProps,
+  SelectTriggerTone,
   SelectValueProps,
 } from './types';
