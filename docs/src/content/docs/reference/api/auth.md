@@ -249,7 +249,7 @@ This operation has no sample: 303 back to the application, with the session in a
 
 `POST /api/v1/auth/accounts`. Add a person.
 
-Creates an account under a minted id. Without a role the id holds no grant, so the new person can log in and can do nothing until one is written for them; with a role the org tuple is written in the same call, so one request produces a usable person. The answer carries the subject in tuple spelling, which is what a grant names. It takes configure_resource on the auth resource kind, and the role is refused unless the caller could have written that tuple themselves. It also takes a sign-in, which is a session or a Prusa Account token that a pairing names a person with. An api credential, and a token paired to a service account, are refused with SESSION_REQUIRED.
+Creates an account under a minted id. Without a role the id holds no grant, so the new person can log in and can do nothing until one is written for them; with a role the role is written in the same call, so one request produces a usable person. The answer carries the subject in tuple spelling, which is what a grant names. It takes configure_resource on the auth resource kind, and the role is written as set-account-role writes it, so any role that call accepts is accepted here, admin included. It also takes a sign-in, which is a session or a Prusa Account token that a pairing names a person with. An api credential, and a token paired to a service account, are refused with SESSION_REQUIRED.
 
 - credential: bearer token. The client method is `createAccount`
 - request body: `application/json` (`AccountBody`), required
@@ -1176,7 +1176,7 @@ This operation has no sample: 204. A password change that answered a body would 
 
 `PUT /api/v1/auth/accounts/{account}/role`. Set a person's role.
 
-Puts an account on one of this server's three roles: viewer, operator or admin. The role replaces whatever the account held, so one person holds one role and a page changing a role sends one request. It takes configure_resource on the auth resource kind, which is the grant that administers this server's identity, and it is the only path that writes the admin role: the grant surface refuses that one. The last account holding admin is refused, because a server with no administrator has nobody who can add a person or change what one may do. It also takes a sign-in, which is a session or a Prusa Account token that a pairing names a person with. An api credential, and a token paired to a service account, are refused with SESSION_REQUIRED.
+Puts an account on one of this server's three roles: viewer, operator or admin. The role replaces whatever the account held, so one person holds one role and a page changing a role sends one request. It takes configure_resource on the auth resource kind, which is the grant that administers this server's identity. It and create-account are the paths that write the admin role: the grant surface refuses that one. The last account holding admin is refused, because a server with no administrator has nobody who can add a person or change what one may do. It also takes a sign-in, which is a session or a Prusa Account token that a pairing names a person with. An api credential, and a token paired to a service account, are refused with SESSION_REQUIRED.
 
 | parameter | in | type | required | description |
 |---|---|---|---|---|

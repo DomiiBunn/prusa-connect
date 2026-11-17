@@ -455,10 +455,11 @@ func registerCreateAccount(api huma.API, cfg Config) {
 		Summary:     "Add a person",
 		Description: "Creates an account under a minted id. Without a role the id holds no grant, so " +
 			"the new person can log in and can do nothing until one is written for them; with a role " +
-			"the org tuple is written in the same call, so one request produces a usable person. The " +
+			"the role is written in the same call, so one request produces a usable person. The " +
 			"answer carries the subject in tuple spelling, which is what a grant names. It takes " +
-			"configure_resource on the auth resource kind, and the role is refused unless the caller " +
-			"could have written that tuple themselves. " +
+			"configure_resource on the auth resource kind, and the role is written as " +
+			"set-account-role writes it, so any role that call accepts is accepted here, admin " +
+			"included. " +
 			"It also takes a sign-in, which is a session or a Prusa Account token that a pairing " +
 			"names a person with. An api credential, and a token paired to a service account, are " +
 			"refused with SESSION_REQUIRED.",
@@ -584,9 +585,10 @@ func registerSetAccountRole(api huma.API, cfg Config) {
 		Description: "Puts an account on one of this server's three roles: viewer, operator or admin. " +
 			"The role replaces whatever the account held, so one person holds one role and a page " +
 			"changing a role sends one request. It takes configure_resource on the auth resource kind, " +
-			"which is the grant that administers this server's identity, and it is the only path that " +
-			"writes the admin role: the grant surface refuses that one. The last account holding admin " +
-			"is refused, because a server with no administrator has nobody who can add a person or " +
+			"which is the grant that administers this server's identity. It and create-account are " +
+			"the paths that write the admin role: the grant surface refuses that one. The last " +
+			"account holding admin is refused, because a server with no administrator has nobody " +
+			"who can add a person or " +
 			"change what one may do. " +
 			"It also takes a sign-in, which is a session or a Prusa Account token that a pairing " +
 			"names a person with. An api credential, and a token paired to a service account, are " +
@@ -778,12 +780,14 @@ func subjectOfAccount(account Account) string {
 	return authz.TypeUser.String() + ":" + account.ID
 }
 
-// grantRole writes the org tuple a create asked for, in the caller's name.
+// grantRole writes the org role a create asked for, in the caller's name.
 //
-// It is the caller's own write and not the server's: the grant surface refuses
-// a tuple conferring anything the caller does not already hold, and creating an
-// account must not be a way around that. An administrator who could not write
-// the tuple by hand cannot write it here either.
+// It goes through SetOrgRole, the path set-account-role takes, so a create
+// with a role is bounded by exactly what the caller could do in a second call.
+// An administrator who could not set the role by hand cannot set it here
+// either. The grant surface is the wrong path: it refuses the admin role on an
+// org (see authz.adminNotConferrable), so a create asking for admin answered
+// 403 after the account already existed.
 //
 // It is not in the account store's transaction. If the grant is refused, the
 // account exists and holds nothing, which is the safe half to lose. The
@@ -804,26 +808,12 @@ func grantRole(ctx context.Context, cfg Config, account Account, role string) er
 		return err
 	}
 
-	org, err := authz.NewObject(authz.TypeOrg, bootstrapOrgName)
-	if err != nil {
-		return err
-	}
-
 	subject, err := authz.NewSubject(authz.TypeUser, account.ID)
 	if err != nil {
 		return err
 	}
 
-	grant, err := authz.NewTuple(org, authz.Relation(role), subject)
-	if err != nil {
-		return err
-	}
-
-	if _, err = cfg.Grants.WriteGrant(ctx, who, grant); err != nil {
-		return err
-	}
-
-	return nil
+	return cfg.Grants.SetOrgRole(ctx, who, subject, authz.Relation(role))
 }
 
 // bootstrapOrgName is the org a role is written on. The composition root spells

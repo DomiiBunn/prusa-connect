@@ -312,7 +312,8 @@ removed with its tuples, through `RemoveDevice`, and its camera row goes with
 its directory row (ADR-20261116-g5x).
 
 With `core.authz.org_admin_handover` off, the grant routes refuse the `admin`
-relation on an org, and only the account role route writes it. A deployment
+relation on an org. Only `SetOrgRole` writes it, which the account role route
+and a create-account that names a role both call. A deployment
 that lost its last admin recovers by changing `core.principal` and restarting.
 
 No gate checks the last rule above. The tests in

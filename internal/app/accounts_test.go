@@ -7,6 +7,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 	"time"
@@ -485,6 +486,40 @@ func TestAnAdministratorResetEndsTheTokensTheirOwnerMinted(t *testing.T) {
 
 	kept := send(t, running, http.MethodGet, "/api/v1/auth/credentials", "", bearerOf(service))
 	require.Equal(t, http.StatusOK, kept.status, "the reset ended a token somebody else minted: %s", kept.body)
+}
+
+// TestAnAdministratorAddsAnotherAdministratorInOneCall is ADR-20260901-b2z
+// rule 36 for the admin role, against the real graph. The grant surface refuses
+// the admin role on an org, so a create that wrote its role there answered 403
+// after the account already existed, and left a person holding nothing.
+func TestAnAdministratorAddsAnotherAdministratorInOneCall(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	running := start(t, dir, bearerStreamConfig(dir))
+
+	owner := signUpTheOwner(t, running)
+
+	added := send(t, running, http.MethodPost, "/api/v1/auth/accounts",
+		`{"username":"second-admin@example.com","password":"another good password","role":"admin"}`, owner)
+	require.Equal(t, http.StatusCreated, added.status, added.body)
+
+	var account httpapi.Account
+
+	require.NoError(t, json.Unmarshal([]byte(added.body), &account))
+
+	listed := send(t, running, http.MethodGet, "/api/v1/auth/accounts", "", owner)
+	require.Equal(t, http.StatusOK, listed.status, listed.body)
+
+	var page struct {
+		Items []httpapi.Account `json:"items"`
+	}
+
+	require.NoError(t, json.Unmarshal([]byte(listed.body), &page))
+
+	idx := slices.IndexFunc(page.Items, func(a httpapi.Account) bool { return a.ID == account.ID })
+	require.NotEqual(t, -1, idx, "the new account is not listed")
+	require.Equal(t, "admin", page.Items[idx].Role, "the new account does not hold the role it was created with")
 }
 
 // logInOver logs a person in and returns the headers a request from them

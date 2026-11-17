@@ -597,9 +597,10 @@ func TestAnAccountRendersTheSubjectAGrantNames(t *testing.T) {
 	require.Equal(t, "user:u-alice", body.Items[0].Subject)
 }
 
-// One call makes a usable person, which is ADR-20260901-b2z rule 36. The tuple is
-// written in the caller's name, so it is refused wherever the caller could not
-// have written it by hand.
+// One call makes a usable person, which is ADR-20260901-b2z rule 36. The role is
+// written in the caller's name through SetOrgRole, the path set-account-role
+// takes, so it is refused wherever the caller could not have set it by hand. It
+// never goes through the grant surface, which refuses the admin role on an org.
 func TestCreatingAnAccountWithARoleWritesTheOrgTuple(t *testing.T) {
 	t.Parallel()
 
@@ -612,15 +613,16 @@ func TestCreatingAnAccountWithARoleWritesTheOrgTuple(t *testing.T) {
 		`{"username":"bob","password":"a-long-enough-one","role":"operator"}`)
 	require.Equal(t, http.StatusCreated, rec.Code, rec.Body.String())
 
-	require.Len(t, grants.written, 1, "no org tuple was written for the new account")
-	require.Equal(t, "org:local#operator@user:u0123456789abcdefghij", grants.written[0].String())
+	require.Len(t, grants.roles, 1, "no org role was set for the new account")
+	require.Equal(t, "org:local#operator@user:u0123456789abcdefghij", grants.roles[0].String())
+	require.Empty(t, grants.written, "the role went through the grant surface")
 
 	// And with no role, nothing is written: an account that holds nothing is
 	// the safe default and stays the default.
 	rec = call(t, handler, http.MethodPost, "/api/v1/auth/accounts",
 		`{"username":"carol","password":"a-long-enough-one"}`)
 	require.Equal(t, http.StatusCreated, rec.Code, rec.Body.String())
-	require.Len(t, grants.written, 1, "a role nobody asked for was written")
+	require.Len(t, grants.roles, 1, "a role nobody asked for was written")
 }
 
 // adminGrants is a grant store whose caller administers this server's identity

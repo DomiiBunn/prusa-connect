@@ -114,7 +114,9 @@ func Grantable(object Type, relation Relation, subject Type) bool {
 // the transaction that reads the graph to decide it. Afterwards the account
 // holds that role and no other.
 //
-// It is the one path that writes the admin role. WriteGrant refuses that write
+// It is the one path that writes the admin role. The HTTP routes that set a
+// role, set-account-role and create-account with a role, both call it.
+// WriteGrant refuses that write
 // and keeps refusing it, because the two surfaces are bounded by different
 // things. A grant written through WriteGrant names any org, and an admin role on
 // a second org is what lets its holder attach that org to a device of somebody
