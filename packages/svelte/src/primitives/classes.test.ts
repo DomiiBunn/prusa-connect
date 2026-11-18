@@ -486,6 +486,14 @@ const exceptions: Exception[] = [
       'The keys of the width table, which the class scan reads as class names. They are not classes and never reach the markup.',
   },
   {
+    component: 'select',
+    slot: 'select-trigger',
+    side: 'svelte',
+    classes: ['default', 'info'],
+    reason:
+      'The keys of the tone table, which the class scan reads as class names. They are not classes and never reach the markup.',
+  },
+  {
     component: 'material-swatch',
     slot: 'material-swatch',
     side: 'react',
