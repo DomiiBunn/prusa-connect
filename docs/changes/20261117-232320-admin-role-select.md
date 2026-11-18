@@ -1,2 +1,2 @@
 ### Fixed
-- On the People page, the role box of an administrator is filled blue with dark text, as the administrator badge is, and no longer shows dark text on a dark page.
+- On the People page, an administrator's role select is now blue with dark text, like the administrator badge, and no longer dark on a dark page.
