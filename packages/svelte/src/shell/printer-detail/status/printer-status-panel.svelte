@@ -329,30 +329,36 @@
                 <span class={BLOCK_LABEL}>
                   {t('printerDetailStatus.camera.label')}
                 </span>
-                <CameraPicture
-                  {...camera}
-                  alt={t('printerDetailStatus.camera.alt')}
-                  bind:playing={
-                    () => playing,
-                    (on: boolean) => {
-                      playingName = on ? camera.camera.name : undefined;
+                <!-- Keyed, so another camera starts as a new picture: playing
+                     while it is seen, and never held by a stop the last one
+                     was given. -->
+                {#key camera.camera.name}
+                  <CameraPicture
+                    {...camera}
+                    alt={t('printerDetailStatus.camera.alt')}
+                    autoplay
+                    bind:playing={
+                      () => playing,
+                      (on: boolean) => {
+                        playingName = on ? camera.camera.name : undefined;
+                      }
                     }
-                  }
-                  class="rounded-sm"
-                >
-                  {#if playing}
-                    <Badge
-                      variant="secondary"
-                      class="absolute start-2 top-2 gap-1.5 uppercase"
-                    >
-                      <span
-                        class="size-1.5 rounded-full bg-destructive"
-                        aria-hidden="true"
-                      ></span>
-                      {t('printerDetailStatus.camera.live')}
-                    </Badge>
-                  {/if}
-                </CameraPicture>
+                    class="rounded-sm"
+                  >
+                    {#if playing}
+                      <Badge
+                        variant="secondary"
+                        class="absolute start-2 top-2 gap-1.5 uppercase"
+                      >
+                        <span
+                          class="size-1.5 rounded-full bg-destructive"
+                          aria-hidden="true"
+                        ></span>
+                        {t('printerDetailStatus.camera.live')}
+                      </Badge>
+                    {/if}
+                  </CameraPicture>
+                {/key}
               </div>
             {/if}
             {@render currentPrint()}

@@ -374,14 +374,11 @@ describe('PrinterStatusPanel', () => {
 
   // The picture is the still frame until a person plays it, and only then
   // says it is live; stop brings the still back.
-  it('plays the camera only when a person presses play, and says live only then', async () => {
+  it('plays the camera while it is seen, and says live only then', async () => {
     const { container } = await render(PrinterStatusPanel, {
       props: props({ camera: FEED }),
     });
 
-    expect(container.textContent).not.toContain('Live');
-
-    await page.getByRole('button', { name: 'Play bed-cam live' }).click();
     await expect.element(page.getByText('Live')).toBeVisible();
 
     await page.getByRole('button', { name: 'Stop bed-cam' }).click();
@@ -391,21 +388,23 @@ describe('PrinterStatusPanel', () => {
     expect(container.textContent).not.toContain('Live');
   });
 
-  it('starts another camera on its still frame', async () => {
+  it('plays another camera on its own, whatever the person did to the last one', async () => {
     const { rerender } = await render(PrinterStatusPanel, {
       props: props({ camera: FEED }),
     });
-    await page.getByRole('button', { name: 'Play bed-cam live' }).click();
-    await expect.element(page.getByText('Live')).toBeVisible();
+    await page.getByRole('button', { name: 'Stop bed-cam' }).click();
+    await expect
+      .element(page.getByRole('button', { name: 'Play bed-cam live' }))
+      .toBeVisible();
 
     await rerender({
       camera: { ...FEED, camera: { ...FEED.camera, name: 'side-cam' } },
     });
 
     await expect
-      .element(page.getByRole('button', { name: 'Play side-cam live' }))
+      .element(page.getByRole('button', { name: 'Stop side-cam' }))
       .toBeVisible();
-    expect(page.getByText('Live').query()).toBe(null);
+    await expect.element(page.getByText('Live')).toBeVisible();
   });
 
   // A file still going up to this server shows beside the drop target, not

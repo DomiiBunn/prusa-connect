@@ -4,6 +4,10 @@
   can stream, and stop in a corner while it does. The Cameras tab, the
   printer's Now tab, the dashboard's camera tile and the printer list's camera
   view all draw a camera this way.
+
+  With autoplay the live view also starts while the picture is seen and stops
+  while it is not (ADR-20261119-pxn). A stop the person pressed, or a view
+  that did not start, holds it until they press play.
 -->
 <script lang="ts">
   import PlayIcon from '@lucide/svelte/icons/play';
@@ -15,6 +19,7 @@
   import { AspectRatio, Button } from '../../primitives';
   import type { CameraPictures, CameraWatch } from './types';
   import WebrtcView from './webrtc-view.svelte';
+  import { whileSeen } from './while-seen';
 
   let {
     camera,
@@ -23,6 +28,7 @@
     watch,
     view,
     playing = $bindable(false),
+    autoplay = false,
     class: className,
     children,
   }: {
@@ -35,6 +41,8 @@
     view?: Snippet<[Camera]> | undefined;
     /** Whether the live view runs. A stream runs only while somebody asked for it. */
     playing?: boolean;
+    /** Play the live view while the picture is on screen in a shown tab. */
+    autoplay?: boolean;
     class?: string | undefined;
     /** Drawn over the picture, such as a badge. */
     children?: Snippet;
@@ -81,20 +89,30 @@
   // Whether the last live view did not start, which the picture says until
   // it is played again.
   let stalled = $state(false);
+  // Whether the person stopped the live view, or it did not start. Either
+  // way it waits for their play, so scrolling never starts it again.
+  let held = false;
   const fail = (): void => {
     playing = false;
     stalled = true;
+    held = true;
   };
 
   const toggle = (): void => {
     stalled = false;
     playing = !playing;
+    held = !playing;
+  };
+
+  const follow = (seen: boolean): void => {
+    if (!held) playing = seen;
   };
 </script>
 
 <AspectRatio
   ratio={16 / 9}
   class={['relative overflow-hidden bg-muted', className]}
+  {@attach autoplay ? whileSeen(follow) : undefined}
 >
   <!-- The words sit under the pictures, so they show until a picture loads
        over them. A playing live view sits over the still frame: a camera
