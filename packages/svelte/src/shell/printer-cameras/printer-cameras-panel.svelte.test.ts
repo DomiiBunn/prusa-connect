@@ -1,5 +1,5 @@
 import { createRawSnippet } from 'svelte';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import { render } from 'vitest-browser-svelte';
 
@@ -74,42 +74,82 @@ const shownOf = (name: string): string => {
   );
 };
 
+/** Shows or hides the browser tab, as switching to another tab does. */
+const showPage = (state: DocumentVisibilityState): void => {
+  Object.defineProperty(document, 'visibilityState', {
+    configurable: true,
+    get: () => state,
+  });
+  document.dispatchEvent(new Event('visibilitychange'));
+};
+
+afterEach(() => {
+  Reflect.deleteProperty(document, 'visibilityState');
+});
+
 describe('PrinterCamerasPanel', () => {
-  it('draws each camera from its still frame until a person plays its live view', async () => {
+  // ADR-20261119-pxn rules 1 and 2.
+  it('plays each camera while its card is seen, until a person stops it', async () => {
     await draw();
 
     const name = `The camera bed-cam on ${PRINTER_NAME}`;
     await expect
       .element(page.getByRole('img', { name }))
-      .toHaveAttribute('src', expect.stringContaining('#still-bed-cam'));
-
-    await page.getByRole('button', { name: 'Play bed-cam live' }).click();
-    await expect
-      .element(page.getByRole('img', { name }))
       .toHaveAttribute('src', expect.stringContaining('#live-bed-cam'));
-    await expect.element(page.getByText('Live')).toBeVisible();
+    expect(cardOf('bed-cam')?.textContent).toContain('Live');
 
     await page.getByRole('button', { name: 'Stop bed-cam' }).click();
     await expect
       .element(page.getByRole('img', { name }))
       .toHaveAttribute('src', expect.stringContaining('#still-bed-cam'));
+
+    // A stop holds: the tab coming back does not start it again.
+    showPage('hidden');
+    showPage('visible');
+    await expect
+      .element(page.getByRole('button', { name: 'Play bed-cam live' }))
+      .toBeVisible();
+    expect(cardOf('bed-cam')?.textContent).not.toContain('Live');
   });
 
-  it('starts a camera added again under the name of one that played on its still frame', async () => {
+  // ADR-20261119-pxn rule 1.
+  it('stops a live view while the browser tab is hidden, and plays it again when shown', async () => {
+    await draw();
+
+    const name = `The camera bed-cam on ${PRINTER_NAME}`;
+    await expect
+      .element(page.getByRole('img', { name }))
+      .toHaveAttribute('src', expect.stringContaining('#live-bed-cam'));
+
+    showPage('hidden');
+    await expect
+      .element(page.getByRole('img', { name }))
+      .toHaveAttribute('src', expect.stringContaining('#still-bed-cam'));
+
+    showPage('visible');
+    await expect
+      .element(page.getByRole('img', { name }))
+      .toHaveAttribute('src', expect.stringContaining('#live-bed-cam'));
+  });
+
+  // ADR-20261119-pxn rule 2. A declared camera keeps its card while the
+  // server does not run it, so the stop is still the person's.
+  it('keeps a camera a person stopped on its still frame when it stops running and comes back', async () => {
     const settings = fakeSettings();
     const all = listingOf(settings.items);
     const { rerender } = await draw(settings);
 
-    await page.getByRole('button', { name: 'Play bed-cam live' }).click();
+    await page.getByRole('button', { name: 'Stop bed-cam' }).click();
     await rerender({
       cameras: all.filter((camera) => camera.name !== 'bed-cam'),
     });
     await rerender({ cameras: all });
+    cardOf('bed-cam')?.scrollIntoView();
 
     await expect
       .element(page.getByRole('button', { name: 'Play bed-cam live' }))
       .toBeVisible();
-    expect(page.getByText('Live').query()).toBeNull();
+    expect(cardOf('bed-cam')?.textContent).not.toContain('Live');
   });
 
   it('offers to play only a camera that has a live view', async () => {
@@ -138,7 +178,6 @@ describe('PrinterCamerasPanel', () => {
       },
     });
 
-    await page.getByRole('button', { name: 'Play lone-cam live' }).click();
     await expect
       .element(
         page.getByText('The camera did not start streaming.', { exact: false }),
@@ -273,7 +312,8 @@ describe('PrinterCamerasPanel', () => {
     expect(shownOf('fetched-cam')).not.toContain('Upload address');
   });
 
-  it('plays an H.264 camera over WebRTC, and says so when it does not start', async () => {
+  // ADR-20261119-pxn rule 3: a view that did not start is not tried again.
+  it('plays an H.264 camera over WebRTC, and says so once when it does not start', async () => {
     const offers: string[] = [];
     await draw(fakeSettings(), {
       watch: (_camera: string, offer: string) => {
@@ -282,8 +322,7 @@ describe('PrinterCamerasPanel', () => {
         return Promise.reject(new Error('no route'));
       },
     });
-
-    await page.getByRole('button', { name: 'Play shelf-cam live' }).click();
+    cardOf('shelf-cam')?.scrollIntoView();
 
     await expect
       .element(
@@ -292,6 +331,8 @@ describe('PrinterCamerasPanel', () => {
         ),
       )
       .toBeVisible();
+    showPage('hidden');
+    showPage('visible');
     expect(offers).toHaveLength(1);
     expect(offers[0]).toContain('m=video');
     await expect
@@ -362,8 +403,6 @@ describe('PrinterCamerasPanel', () => {
       },
     });
 
-    expect(page.getByText('module view of bed-cam').query()).toBe(null);
-    await page.getByRole('button', { name: 'Play bed-cam live' }).click();
     await expect
       .element(page.getByText('module view of bed-cam'))
       .toBeVisible();
