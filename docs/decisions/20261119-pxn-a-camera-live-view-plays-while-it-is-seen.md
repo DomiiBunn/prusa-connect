@@ -1,6 +1,6 @@
 ---
 title: "ADR-20261119-pxn: A camera live view plays while it is seen"
-description: "On the Cameras tab and the Now tab a camera's live view starts while its picture is on screen in a shown browser tab, and stops when it is not, unless the person stopped it."
+description: "Wherever the web app draws a camera, its live view starts while its picture is on screen in a shown browser tab, and stops when it is not, unless the person stopped it."
 date: 2026-11-19
 status: proposed
 supersedes: []
@@ -26,18 +26,19 @@ somebody can see it costs the camera nothing while nobody does.
 
 ## rules
 
-1. On the Cameras tab and the Now tab, a camera's live view starts when its
-   picture is on screen in a browser tab that is shown. It stops when the
-   picture leaves the screen or the tab is hidden, and starts again when both
-   are true again.
+1. A camera's live view starts when its picture is on screen in a browser tab
+   that is shown. That holds on the Cameras tab, the Now tab, the printers
+   page and the dashboard's camera tile. The view stops when the picture
+   leaves the screen or the tab is hidden, and starts again when both are true
+   again.
 2. A person who presses stop holds the view stopped. It does not start again
    by itself until they press play.
 3. A live view that does not start is held the same way. The picture says it
    did not start, and the person presses play to try again. A view is never
    retried by itself.
-4. The dashboard's camera tile and the printer list's camera view still wait
-   for play. They can draw many cameras at once, and a person looks at them
-   for the still frames.
+4. The printers page and the dashboard play too, though they can draw many
+   cameras at once. Each picture costs only while it is seen. A page left open
+   on a wall is a wall somebody watches.
 5. Rule 3 of ADR-20261106-xm4 otherwise holds. The still frame stays under
    the live view until the first frame covers it. The picture says it is live
    only while it plays.
@@ -46,7 +47,8 @@ somebody can see it costs the camera nothing while nobody does.
 
 The `whileSeen` tests hold rule 1: on screen and shown, each change reported
 once, and nothing reported after the picture is gone. The `PrinterCamerasPanel`
-tests hold rules 2 and 3.
+tests hold rules 2 and 3. The `PrinterFrame` and printers page tests hold rule
+1 for the printers page.
 
 ## rejected
 
@@ -55,4 +57,4 @@ tests hold rules 2 and 3.
 | a live view that starts when the tab opens and runs until the page closes | the cost ADR-20261106-xm4 rejected: a stream for every page left open in a background tab |
 | a setting each person turns on | everybody who opens the tab came to watch, so the setting would be one more step that everybody takes |
 | a view that retries by itself after it did not start | a camera that is down would be asked again and again by every page that shows it |
-| the same on the dashboard and the printer list | they draw many cameras at once, and each would stream while the page is open on a wall |
+| the play button kept on the dashboard and the printers page | a person who puts cameras on a page puts them there to watch, and each picture already stops when it is not seen |
