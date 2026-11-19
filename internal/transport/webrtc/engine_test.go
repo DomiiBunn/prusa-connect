@@ -276,7 +276,7 @@ func newEngineWithTimeout(t *testing.T, timeout time.Duration) *Engine {
 	// Loopback only, here and on the viewer below. Gathering on every
 	// interface binds a UDP socket on each one, and on Windows the firewall
 	// then asks the person at the keyboard to allow the test binary every run.
-	engine, err := New(Config{
+	engine, err := New(t.Context(), Config{
 		Logger:         discard(),
 		ConnectTimeout: timeout,
 		LoopbackOnly:   true,
