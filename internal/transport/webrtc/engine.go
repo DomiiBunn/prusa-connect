@@ -11,6 +11,11 @@
 // a connection with no STUN and no TURN, and an air-gapped install keeps
 // working. A public STUN server would be a hidden cloud dependency, so an
 // operator must name one explicitly.
+//
+// A server in a container or behind NAT holds no address a browser can dial.
+// Config.UDPPort serves every viewer on one port an operator can publish, and
+// Config.Addresses offers the address the browser reaches it at, beside the
+// ones bound here and never in their place.
 package webrtc
 
 import (
@@ -20,11 +25,13 @@ import (
 	"io"
 	"log/slog"
 	"net"
+	"strconv"
 	"sync"
 	"time"
 
 	"github.com/pion/ice/v4"
 	"github.com/pion/interceptor"
+	"github.com/pion/logging"
 	pion "github.com/pion/webrtc/v4"
 	"github.com/pion/webrtc/v4/pkg/media"
 )
@@ -37,6 +44,11 @@ var (
 	// ErrOfferTooLarge reports an offer over the ceiling. An SDP a browser
 	// produces is a few kilobytes.
 	ErrOfferTooLarge = errors.New("webrtc: the offer is over the ceiling")
+	// ErrAddressesWithoutPort refuses advertised addresses with no shared
+	// port. pion would pair an advertised address with a socket of its own
+	// choosing, the loopback one among them, and a reply from there never
+	// reaches the browser.
+	ErrAddressesWithoutPort = errors.New("webrtc: advertised addresses need a fixed UDP port")
 )
 
 const (
@@ -83,6 +95,13 @@ type Config struct {
 	// socket on each one, and on Windows the firewall then asks the person at
 	// the keyboard to allow the binary, on every run.
 	LoopbackOnly bool
+	// UDPPort serves every viewer on this one UDP port. Zero takes a random
+	// port for each viewer, which a container cannot publish.
+	UDPPort int
+	// Addresses are IP addresses a browser reaches this machine at, offered as
+	// host candidates beside the ones gathered here. They need UDPPort: only
+	// the one shared socket answers from the address the kernel routes by.
+	Addresses []string
 }
 
 // Engine negotiates viewers and relays frames to them. One engine serves every
@@ -93,11 +112,15 @@ type Engine struct {
 	config  pion.Configuration
 	timeout time.Duration
 	log     *slog.Logger
+	// mux is the socket on Config.UDPPort, or nil when each viewer takes a
+	// port of its own.
+	mux *ice.UDPMuxDefault
 }
 
-// New builds the engine. It fails only on a media engine this build cannot
-// construct, which is a programming error rather than an operator's.
-func New(cfg Config) (*Engine, error) {
+// New builds the engine. It fails on a media engine this build cannot
+// construct, which is a programming error, and on a UDPPort it cannot bind,
+// which is the operator's to fix.
+func New(ctx context.Context, cfg Config) (*Engine, error) {
 	if cfg.Logger == nil {
 		return nil, errors.New("webrtc: a logger is required")
 	}
@@ -127,12 +150,26 @@ func New(cfg Config) (*Engine, error) {
 		keepLoopbackOnly(&settings)
 	}
 
+	if len(cfg.Addresses) > 0 && cfg.UDPPort == 0 {
+		return nil, ErrAddressesWithoutPort
+	}
+
+	if err := advertise(&settings, cfg.Addresses); err != nil {
+		return nil, err
+	}
+
+	mux, err := listenOnePort(ctx, &settings, cfg.UDPPort, cfg.LoopbackOnly)
+	if err != nil {
+		return nil, err
+	}
+
 	timeout := cfg.ConnectTimeout
 	if timeout <= 0 {
 		timeout = defaultConnectTimeout
 	}
 
 	return &Engine{
+		mux: mux,
 		api: pion.NewAPI(
 			pion.WithMediaEngine(engine),
 			pion.WithInterceptorRegistry(interceptors),
@@ -142,6 +179,78 @@ func New(cfg Config) (*Engine, error) {
 		timeout: timeout,
 		log:     cfg.Logger,
 	}, nil
+}
+
+// advertise offers each address as one more host candidate. Append keeps the
+// addresses gathered here, so a browser on the same network still dials this
+// machine directly when the advertised address is one it cannot reach.
+func advertise(settings *pion.SettingEngine, addresses []string) error {
+	if len(addresses) == 0 {
+		return nil
+	}
+
+	err := settings.SetICEAddressRewriteRules(pion.ICEAddressRewriteRule{
+		External:        addresses,
+		AsCandidateType: pion.ICECandidateTypeHost,
+		Mode:            pion.ICEAddressRewriteAppend,
+	})
+	if err != nil {
+		return fmt.Errorf("advertise the addresses %v: %w", addresses, err)
+	}
+
+	return nil
+}
+
+// listenOnePort binds one UDP socket on port and hands it to every viewer. It
+// returns nil for port zero, which leaves each viewer to bind a random port of
+// its own.
+//
+// The socket is bound to the unspecified address, so the kernel picks the
+// source address of every reply by its route. A socket per interface would
+// answer an advertised address from whichever interface pion listed first,
+// and a reply from the loopback socket never leaves the machine.
+func listenOnePort(
+	ctx context.Context, settings *pion.SettingEngine, port int, loopbackOnly bool,
+) (*ice.UDPMuxDefault, error) {
+	if port == 0 {
+		return nil, nil //nolint:nilnil // nil is the documented "no shared port", not a failure.
+	}
+
+	network, address := "udp", net.JoinHostPort("", strconv.Itoa(port))
+	if loopbackOnly {
+		network, address = "udp4", net.JoinHostPort("127.0.0.1", strconv.Itoa(port))
+	}
+
+	var listener net.ListenConfig
+
+	conn, err := listener.ListenPacket(ctx, network, address)
+	if err != nil {
+		return nil, fmt.Errorf("listen for camera viewers on UDP port %d: %w", port, err)
+	}
+
+	// pion warns about the unspecified address on every start. Binding it is
+	// the choice above, so only its errors are kept.
+	loggers := logging.NewDefaultLoggerFactory()
+	loggers.DefaultLogLevel = logging.LogLevelError
+
+	mux := ice.NewUDPMuxDefault(ice.UDPMuxParams{UDPConn: conn, Logger: loggers.NewLogger("ice")})
+	settings.SetICEUDPMux(mux)
+
+	return mux, nil
+}
+
+// Close releases the shared UDP port. A view still open loses its socket, so
+// it is called once the HTTP surface that makes views has stopped.
+func (e *Engine) Close() error {
+	if e.mux == nil {
+		return nil
+	}
+
+	if err := e.mux.Close(); err != nil {
+		return fmt.Errorf("close the camera viewers' UDP port: %w", err)
+	}
+
+	return nil
 }
 
 // keepLoopbackOnly holds candidate gathering to the loopback interface.
