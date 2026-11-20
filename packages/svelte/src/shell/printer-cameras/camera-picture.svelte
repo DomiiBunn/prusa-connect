@@ -11,18 +11,20 @@
 
   An H.264 live view tries WebRTC first and falls back to the live socket
   when WebRTC does not connect. Once one view on the page has fallen back,
-  every other one goes to the socket first.
+  every other one goes to the socket first. A view that stops because it is
+  not seen holds its connection for a while (live-sessions.ts).
 -->
 <script lang="ts">
   import PlayIcon from '@lucide/svelte/icons/play';
   import SquareIcon from '@lucide/svelte/icons/square';
-  import type { Snippet } from 'svelte';
+  import { type Snippet, tick } from 'svelte';
 
   import type { Camera } from '../../data';
   import { t } from '../../i18n';
   import { AspectRatio, Button } from '../../primitives';
   import { carriageFirst, rememberUnreachable } from './carriage';
   import { lastFrame } from './last-frames';
+  import { hangUp } from './live-sessions';
   import SocketView from './socket-view.svelte';
   import type { CameraPictures, CameraSocket, CameraWatch } from './types';
   import WebrtcView from './webrtc-view.svelte';
@@ -138,10 +140,19 @@
     return still === undefined ? previous : undefined;
   });
 
+  // A view that stops while it is not seen keeps its connection a while, so
+  // it plays at once when it is seen again (live-sessions.ts). A stop the
+  // person pressed hangs up, once the view has let go of the connection.
   const toggle = (): void => {
     stalled = false;
     playing = !playing;
     held = !playing;
+    if (!playing) {
+      const name = camera.name;
+      void tick().then(() => {
+        hangUp(name);
+      });
+    }
   };
 
   const follow = (seen: boolean): void => {

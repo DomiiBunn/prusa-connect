@@ -46,13 +46,19 @@ somebody can see it costs the camera nothing while nobody does.
    That frame is shown grayed out while a view of the camera starts, and in
    place of a still the camera does not keep, so the picture never goes
    blank.
+7. A live view that stops because its picture is not seen keeps its
+   connection for 30 seconds. That covers leaving the screen, a hidden browser
+   tab and another tab of the page. A view of the camera that starts in that
+   time takes the connection over and plays at once. A stop the person pressed
+   hangs up at once.
 
 ## enforcement
 
 The `whileSeen` tests hold rule 1: on screen and shown, each change reported
 once, and nothing reported after the picture is gone. The `PrinterCamerasPanel`
 tests hold rules 2 and 3. The `PrinterFrame` and printers page tests hold rule
-1 for the printers page, and the `PrinterCamerasPanel` tests hold rule 6.
+1 for the printers page, and the `PrinterCamerasPanel` tests hold rules 6
+and 7. The `SessionPool` tests hold rule 7's 30 seconds.
 
 ## rejected
 
