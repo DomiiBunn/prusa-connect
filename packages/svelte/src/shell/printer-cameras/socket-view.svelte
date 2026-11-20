@@ -1,7 +1,8 @@
 <!--
   One camera's H.264 live view over the live socket, for a browser that could
-  not reach the server over WebRTC. It connects when it is drawn and hangs up
-  when it goes, as the WebRTC view does.
+  not reach the server over WebRTC. It connects when it is drawn. When it goes
+  the connection is held a while, and a view of the camera drawn in that time
+  takes it over (live-sessions.ts).
 
   Each message is one picture, which WebCodecs decodes and the canvas draws.
   A picture that does not decode costs the pictures up to the next keyframe,
@@ -10,9 +11,8 @@
 <script lang="ts">
   import { onMount } from 'svelte';
 
-  import { pictureOf } from './h264';
   import { keepFrame } from './last-frames';
-  import { LiveDecoder } from './live-decoder';
+  import { SocketSession, socketSessions } from './socket-session';
 
   let {
     camera,
@@ -32,29 +32,22 @@
     onPicture: (showing: boolean) => void;
   } = $props();
 
+  // The session's canvas, which the wrapper holds while this view shows it.
   let canvas = $state<HTMLCanvasElement | undefined>(undefined);
+  const holding =
+    (shown: HTMLCanvasElement | undefined) =>
+    (box: HTMLDivElement): (() => void) | undefined => {
+      if (shown === undefined) return undefined;
+      box.append(shown);
+
+      // A view that took the canvas over may hold it already.
+      return () => {
+        if (shown.parentNode === box) shown.remove();
+      };
+    };
   // Whether the canvas holds a picture from before the decoder last started,
   // which is drawn grayed out until a new one covers it.
   let waiting = $state(true);
-  // The canvas last drawn on, held apart from the binding, which is cleared
-  // before the teardown that keeps its frame runs.
-  let drawn: HTMLCanvasElement | undefined;
-
-  const draw = (frame: VideoFrame): void => {
-    const target = canvas;
-    const drawing = target?.getContext('2d');
-    if (target === undefined || !drawing) return;
-    if (target.width !== frame.displayWidth) target.width = frame.displayWidth;
-    if (target.height !== frame.displayHeight) {
-      target.height = frame.displayHeight;
-    }
-    drawing.drawImage(frame, 0, 0);
-    drawn = target;
-    if (waiting) {
-      waiting = false;
-      onPicture(true);
-    }
-  };
 
   onMount(() => {
     let ended = false;
@@ -71,52 +64,48 @@
       return;
     }
 
-    const decoder = new LiveDecoder({
-      open: (output, error) => new VideoDecoder({ output, error }),
-      chunk: (init) => new EncodedVideoChunk(init),
-      draw,
+    let session = socketSessions.take(camera);
+    if (session === undefined) {
+      try {
+        session = new SocketSession(open);
+      } catch {
+        fail();
+
+        return;
+      }
+    }
+    const shown = session;
+    canvas = shown.canvas;
+    shown.adopt({
       fail,
-      restart: () => {
-        waiting = true;
-        onPicture(false);
+      picture: (showing) => {
+        waiting = !showing;
+        onPicture(showing);
       },
     });
 
-    let socket: WebSocket;
-    try {
-      socket = open();
-    } catch {
-      decoder.close();
-      fail();
-
-      return;
-    }
-
-    socket.addEventListener('message', (event: MessageEvent<unknown>) => {
-      if (!(event.data instanceof ArrayBuffer)) return;
-      const picture = pictureOf(event.data);
-      if (picture !== undefined) decoder.take(picture, performance.now());
-    });
-    socket.addEventListener('close', fail);
-    socket.addEventListener('error', fail);
-
     return () => {
       ended = true;
-      socket.close();
-      decoder.close();
-      if (drawn !== undefined && !waiting) {
-        keepFrame(camera, drawn, drawn.width, drawn.height);
+      shown.release();
+      if (shown.showing) {
+        keepFrame(
+          camera,
+          shown.canvas,
+          shown.canvas.width,
+          shown.canvas.height,
+        );
       }
       onPicture(false);
+      socketSessions.hold(camera, shown);
     };
   });
 </script>
 
 <!-- A canvas is not an image a screen reader names, so the label sits on a
-     wrapper that is. -->
-<div class="absolute inset-0" role="img" aria-label={label}>
-  <canvas
-    bind:this={canvas}
-    class={['size-full object-contain', waiting && 'opacity-60 grayscale']}
-  ></canvas>
-</div>
+     wrapper that is. The session's canvas goes inside it. -->
+<div
+  {@attach holding(canvas)}
+  class={['absolute inset-0', waiting && 'opacity-60 grayscale']}
+  role="img"
+  aria-label={label}
+></div>

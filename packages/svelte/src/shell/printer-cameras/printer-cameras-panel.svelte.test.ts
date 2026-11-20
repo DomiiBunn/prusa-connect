@@ -1,7 +1,7 @@
 import { createRawSnippet } from 'svelte';
 import { afterEach, describe, expect, it } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
-import { render } from 'vitest-browser-svelte';
+import { cleanup, render } from 'vitest-browser-svelte';
 
 import type { Camera } from '../../data';
 import { expectNoViolations } from '../../test/axe';
@@ -19,6 +19,7 @@ import {
 } from './cameras.fixtures';
 import { forgetCarriage } from './carriage';
 import { forgetFrames, keepFrame, lastFrame } from './last-frames';
+import { hangUpAll } from './live-sessions';
 import PrinterCamerasPanel from './printer-cameras-panel.svelte';
 import type { PrinterCamerasPanelProps } from './types';
 
@@ -88,6 +89,10 @@ const showPage = (state: DocumentVisibilityState): void => {
 };
 
 afterEach(() => {
+  // A view that goes holds its connection, so the pictures go first and the
+  // connections they held after them.
+  cleanup();
+  hangUpAll();
   Reflect.deleteProperty(document, 'visibilityState');
   forgetCarriage();
   forgetFrames();
@@ -103,6 +108,19 @@ const deadSocket = (): WebSocket => {
   queueMicrotask(() => socket.dispatchEvent(new Event('close')));
 
   return socket as unknown as WebSocket;
+};
+
+// A live socket that stays open and sends nothing, and counts its closes.
+const quietSocket = (): WebSocket & { closes: number } => {
+  const socket = Object.assign(new EventTarget(), {
+    binaryType: 'arraybuffer',
+    closes: 0,
+    close: () => {
+      socket.closes += 1;
+    },
+  });
+
+  return socket as unknown as WebSocket & { closes: number };
 };
 
 describe('PrinterCamerasPanel', () => {
@@ -413,6 +431,36 @@ describe('PrinterCamerasPanel', () => {
         ),
       )
       .not.toBe(null);
+  });
+
+  it('keeps the connection of a view that stopped while its tab was hidden, and plays it again on it', async () => {
+    const sockets: (WebSocket & { closes: number })[] = [];
+    await draw(fakeSettings(), {
+      socket: () => {
+        const socket = quietSocket();
+        sockets.push(socket);
+
+        return socket;
+      },
+    });
+    cardOf('shelf-cam')?.scrollIntoView();
+    await expect.poll(() => sockets).toHaveLength(1);
+
+    showPage('hidden');
+    await expect
+      .element(page.getByRole('button', { name: 'Play shelf-cam live' }))
+      .toBeVisible();
+    showPage('visible');
+    await expect
+      .element(page.getByRole('button', { name: 'Stop shelf-cam' }))
+      .toBeVisible();
+
+    expect(sockets).toHaveLength(1);
+    expect(sockets[0]?.closes).toBe(0);
+
+    // A stop the person pressed hangs up at once.
+    await page.getByRole('button', { name: 'Stop shelf-cam' }).click();
+    await expect.poll(() => sockets[0]?.closes).toBe(1);
   });
 
   it('plays an H.264 camera over the live socket alone when nothing answers an offer', async () => {
