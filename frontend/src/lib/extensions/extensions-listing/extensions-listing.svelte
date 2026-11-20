@@ -207,11 +207,8 @@
   </span>
 {/snippet}
 
-<!-- In the table, `w-full!` makes each source badge as wide as its column,
-     and the column is as wide as its widest badge. `w-full!` wins over the
-     badge's own `w-fit`. -->
 {#snippet sourceBadge(row: ExtensionRow)}
-  <Badge variant="outline" size="plain" class="w-full!">
+  <Badge variant="outline" size="plain" class="w-full">
     {#if row.source === 'marketplace'}
       <StoreIcon aria-hidden="true" />
     {:else if row.source === 'local'}
