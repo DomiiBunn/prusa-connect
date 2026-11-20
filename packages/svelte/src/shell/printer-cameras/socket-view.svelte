@@ -4,14 +4,14 @@
   when it goes, as the WebRTC view does.
 
   Each message is one picture, which WebCodecs decodes and the canvas draws.
-  The decoder is configured from the first keyframe, which the server always
-  sends first. A decoder that falls behind drops pictures until the next
-  keyframe rather than drawing the past.
+  A picture that does not decode costs the pictures up to the next keyframe,
+  not the view (live-decoder.ts).
 -->
 <script lang="ts">
   import { onMount } from 'svelte';
 
-  import { codecOf, pictureOf } from './h264';
+  import { pictureOf } from './h264';
+  import { LiveDecoder } from './live-decoder';
 
   let {
     open,
@@ -28,9 +28,16 @@
 
   let canvas = $state<HTMLCanvasElement | undefined>(undefined);
 
-  // How many pictures may wait in the decoder before the ones that are not
-  // keyframes are dropped: about a second at the frame rates cameras run at.
-  const BEHIND = 30;
+  const draw = (frame: VideoFrame): void => {
+    const target = canvas;
+    const drawing = target?.getContext('2d');
+    if (target === undefined || !drawing) return;
+    if (target.width !== frame.displayWidth) target.width = frame.displayWidth;
+    if (target.height !== frame.displayHeight) {
+      target.height = frame.displayHeight;
+    }
+    drawing.drawImage(frame, 0, 0);
+  };
 
   onMount(() => {
     let ended = false;
@@ -47,24 +54,12 @@
       return;
     }
 
-    const decoder = new VideoDecoder({
-      output: (frame) => {
-        const target = canvas;
-        const drawing = target?.getContext('2d');
-        if (target !== undefined && drawing) {
-          if (target.width !== frame.displayWidth) target.width = frame.displayWidth;
-          if (target.height !== frame.displayHeight) {
-            target.height = frame.displayHeight;
-          }
-          drawing.drawImage(frame, 0, 0);
-        }
-        frame.close();
-      },
-      error: fail,
+    const decoder = new LiveDecoder({
+      open: (output, error) => new VideoDecoder({ output, error }),
+      chunk: (init) => new EncodedVideoChunk(init),
+      draw,
+      fail,
     });
-
-    let configured = false;
-    let skipping = false;
 
     let socket: WebSocket;
     try {
@@ -75,39 +70,11 @@
 
       return;
     }
+
     socket.addEventListener('message', (event: MessageEvent<unknown>) => {
       if (!(event.data instanceof ArrayBuffer)) return;
       const picture = pictureOf(event.data);
-      if (picture === undefined) return;
-
-      if (!configured) {
-        if (!picture.key) return;
-        const codec = codecOf(picture.unit);
-        if (codec === undefined) {
-          fail();
-
-          return;
-        }
-        // No description, so the decoder reads the pictures as Annex B.
-        decoder.configure({ codec, optimizeForLatency: true });
-        configured = true;
-      }
-
-      if (decoder.decodeQueueSize > BEHIND) skipping = true;
-      if (skipping && !picture.key) return;
-      skipping = false;
-
-      try {
-        decoder.decode(
-          new EncodedVideoChunk({
-            type: picture.key ? 'key' : 'delta',
-            timestamp: Math.round(performance.now() * 1000),
-            data: picture.unit,
-          }),
-        );
-      } catch {
-        fail();
-      }
+      if (picture !== undefined) decoder.take(picture, performance.now());
     });
     socket.addEventListener('close', fail);
     socket.addEventListener('error', fail);
@@ -115,7 +82,7 @@
     return () => {
       ended = true;
       socket.close();
-      if (decoder.state !== 'closed') decoder.close();
+      decoder.close();
     };
   });
 </script>
