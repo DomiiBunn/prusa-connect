@@ -4,7 +4,11 @@
   only while somebody watches it.
 
   The negotiation is one request: the offer goes once every candidate of this
-  browser is in it, and the answer carries every candidate of the server.
+  browser is in it, and the answer carries every candidate of the server. A
+  connection that is not up a few seconds after the answer has no candidate
+  this browser can reach, and the view says it did not start, so the picture
+  can fall back to the live socket rather than wait out the browser's own
+  ICE timeout.
 -->
 <script lang="ts">
   import { onMount } from 'svelte';
@@ -32,6 +36,10 @@
   // and an offer sent without some of them still connects on the others.
   const GATHER_MS = 2000;
 
+  // How long the connection may take once the answer is in. On the network
+  // the camera is on it connects in well under a second.
+  const CONNECT_MS = 5000;
+
   const gathered = (connection: RTCPeerConnection): Promise<void> =>
     new Promise((resolve) => {
       if (connection.iceGatheringState === 'complete') {
@@ -51,6 +59,13 @@
 
   onMount(() => {
     const ended = new AbortController();
+    let failed = false;
+    const fail = (): void => {
+      if (ended.signal.aborted || failed) return;
+      failed = true;
+      onFail();
+    };
+    let deadline: ReturnType<typeof setTimeout> | undefined;
     const connection = new RTCPeerConnection();
     connection.addTransceiver('video', { direction: 'recvonly' });
     connection.addEventListener('track', (event) => {
@@ -59,9 +74,8 @@
       }
     });
     connection.addEventListener('connectionstatechange', () => {
-      if (connection.connectionState === 'failed' && !ended.signal.aborted) {
-        onFail();
-      }
+      if (connection.connectionState === 'connected') clearTimeout(deadline);
+      if (connection.connectionState === 'failed') fail();
     });
 
     const start = async (): Promise<void> => {
@@ -70,13 +84,15 @@
       const offer = connection.localDescription?.sdp ?? '';
       const answer = await watch(camera, offer, ended.signal);
       await connection.setRemoteDescription({ type: 'answer', sdp: answer });
+      if (connection.connectionState !== 'connected') {
+        deadline = setTimeout(fail, CONNECT_MS);
+      }
     };
 
-    start().catch(() => {
-      if (!ended.signal.aborted) onFail();
-    });
+    start().catch(fail);
 
     return () => {
+      clearTimeout(deadline);
       ended.abort();
       connection.close();
     };

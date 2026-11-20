@@ -65,6 +65,11 @@ const (
 	// h264ClockRate is the RTP clock H.264 is carried on, fixed by RFC 6184.
 	h264ClockRate = 90000
 
+	// openTimeout bounds how long a connected view waits for the camera to
+	// open. The request that negotiated the view has already returned, so
+	// nothing else ends a wait on a camera that never answers.
+	openTimeout = 30 * time.Second
+
 	// reportBuffer holds one receiver report. It is the usual path MTU, which
 	// is larger than any RTCP compound this receives.
 	reportBuffer = 1500
@@ -272,32 +277,36 @@ func keepLoopbackOnly(settings *pion.SettingEngine) {
 	settings.SetIPFilter(func(address net.IP) bool { return address.IsLoopback() })
 }
 
-// Offer answers one browser's SDP offer and starts relaying frames to it.
+// Opener opens the camera stream a view relays. The view calls it once, when
+// the browser has connected, and owns what it returns.
+type Opener func(ctx context.Context) (io.ReadCloser, error)
+
+// Offer answers one browser's SDP offer and relays the camera to it once the
+// browser connects.
 //
-// It takes ownership of frames and closes them when the view ends, whichever
-// way it ends: the browser going away, the camera stopping, the connection
-// failing, or the connect deadline passing with nothing dialled. Closing the
-// stream is what gives the camera's bulkhead slot and its device socket back,
-// so every exit here goes through one close.
-func (e *Engine) Offer(ctx context.Context, offer string, frames io.ReadCloser) (string, error) {
-	if frames == nil {
-		return "", errors.New("webrtc: no frames to relay")
+// The camera is opened only then. A browser that never reaches this server,
+// because no candidate in the answer is one it can dial, would otherwise hold
+// one of the camera's stream slots until the connect deadline. The view the
+// browser falls back to would then wait behind its own failed attempt.
+//
+// The view closes the stream when it ends, whichever way it ends: the browser
+// going away, the camera stopping, or the connection failing. Closing the
+// stream is what gives the camera's bulkhead slot and its device socket back.
+func (e *Engine) Offer(ctx context.Context, offer string, open Opener) (string, error) {
+	if open == nil {
+		return "", errors.New("webrtc: no camera to relay")
 	}
 
 	if err := checkOffer(offer); err != nil {
-		_ = frames.Close()
-
 		return "", err
 	}
 
 	peer, err := e.api.NewPeerConnection(e.config)
 	if err != nil {
-		_ = frames.Close()
-
 		return "", fmt.Errorf("open a peer connection: %w", err)
 	}
 
-	view := &view{peer: peer, frames: frames, log: e.log, connected: make(chan struct{})}
+	view := &view{peer: peer, open: open, log: e.log, connected: make(chan struct{})}
 
 	// Watched before the offer is read, because a connection that arrives
 	// during the negotiation would otherwise change state with nothing
@@ -316,8 +325,6 @@ func (e *Engine) Offer(ctx context.Context, offer string, frames io.ReadCloser) 
 	// closes the connection the negotiation is still building, and the caller
 	// is then told the offer failed on a machine that was only slow.
 	view.deadline(e.timeout)
-
-	go view.relay()
 
 	return answer, nil
 }
@@ -378,14 +385,21 @@ func (e *Engine) negotiate(ctx context.Context, v *view, offer string) (string, 
 // view is one viewer: their peer connection, the camera stream feeding it, and
 // the one close that ends both.
 type view struct {
-	peer   *pion.PeerConnection
-	track  *pion.TrackLocalStaticSample
-	frames io.ReadCloser
-	log    *slog.Logger
+	peer  *pion.PeerConnection
+	track *pion.TrackLocalStaticSample
+	open  Opener
+	log   *slog.Logger
 
 	connected chan struct{}
 	once      sync.Once
 	ready     sync.Once
+	dialled   sync.Once
+
+	// mu guards frames and ended. The camera opens on a goroutine of its own
+	// while the browser may already be closing the view.
+	mu     sync.Mutex
+	frames io.ReadCloser
+	ended  bool
 }
 
 // watch ends the view when the connection fails or goes away.
@@ -394,6 +408,7 @@ func (v *view) watch() {
 		switch state {
 		case pion.PeerConnectionStateConnected:
 			v.ready.Do(func() { close(v.connected) })
+			v.dialled.Do(func() { go v.relay() })
 		case pion.PeerConnectionStateFailed,
 			pion.PeerConnectionStateClosed,
 			pion.PeerConnectionStateDisconnected:
@@ -435,7 +450,12 @@ func (v *view) deadline(timeout time.Duration) {
 func (v *view) relay() {
 	defer v.close()
 
-	pictures := newPictures(v.frames).withLog(v.log)
+	frames, ok := v.start()
+	if !ok {
+		return
+	}
+
+	pictures := newPictures(frames).withLog(v.log)
 
 	var last time.Time
 
@@ -468,6 +488,34 @@ func (v *view) relay() {
 	}
 }
 
+// start opens the camera and hands the stream to the view. It reports false
+// when there is nothing to relay: the camera did not open, or the view ended
+// while it was opening, in which case the stream is closed here.
+func (v *view) start() (io.ReadCloser, bool) {
+	ctx, cancel := context.WithTimeout(context.Background(), openTimeout)
+	defer cancel()
+
+	frames, err := v.open(ctx)
+	if err != nil {
+		v.log.Warn("a connected camera view could not open the camera", "error", err.Error())
+
+		return nil, false
+	}
+
+	v.mu.Lock()
+	defer v.mu.Unlock()
+
+	if v.ended {
+		_ = frames.Close()
+
+		return nil, false
+	}
+
+	v.frames = frames
+
+	return frames, true
+}
+
 // close ends the view once. Closing the camera stream is what releases the
 // device connection and the instance's bulkhead slot, so it happens on every
 // path out.
@@ -475,8 +523,15 @@ func (v *view) close() {
 	v.once.Do(func() {
 		v.ready.Do(func() { close(v.connected) })
 
-		if err := v.frames.Close(); err != nil {
-			v.log.Warn("a camera stream did not close cleanly", "error", err.Error())
+		v.mu.Lock()
+		frames := v.frames
+		v.ended = true
+		v.mu.Unlock()
+
+		if frames != nil {
+			if err := frames.Close(); err != nil {
+				v.log.Warn("a camera stream did not close cleanly", "error", err.Error())
+			}
 		}
 
 		if err := v.peer.Close(); err != nil {

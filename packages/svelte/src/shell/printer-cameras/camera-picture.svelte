@@ -8,6 +8,10 @@
   With autoplay the live view also starts while the picture is seen and stops
   while it is not (ADR-20261119-pxn). A stop the person pressed, or a view
   that did not start, holds it until they press play.
+
+  An H.264 live view tries WebRTC first and falls back to the live socket
+  when WebRTC does not connect. Once one view on the page has fallen back,
+  every other one goes to the socket first.
 -->
 <script lang="ts">
   import PlayIcon from '@lucide/svelte/icons/play';
@@ -17,7 +21,9 @@
   import type { Camera } from '../../data';
   import { t } from '../../i18n';
   import { AspectRatio, Button } from '../../primitives';
-  import type { CameraPictures, CameraWatch } from './types';
+  import { carriageFirst, rememberUnreachable } from './carriage';
+  import SocketView from './socket-view.svelte';
+  import type { CameraPictures, CameraSocket, CameraWatch } from './types';
   import WebrtcView from './webrtc-view.svelte';
   import { whileSeen } from './while-seen';
 
@@ -26,6 +32,7 @@
     pictures,
     alt,
     watch,
+    socket,
     view,
     playing = $bindable(false),
     autoplay = false,
@@ -37,6 +44,8 @@
     /** What a screen reader says the picture is. */
     alt: string;
     watch?: CameraWatch | undefined;
+    /** Where the H.264 live view goes when WebRTC does not connect. */
+    socket?: CameraSocket | undefined;
     /** A module's own live view of the camera, drawn in place of the core's. */
     view?: Snippet<[Camera]> | undefined;
     /** Whether the live view runs. A stream runs only while somebody asked for it. */
@@ -83,7 +92,7 @@
   const livable = $derived(
     (view !== undefined && still !== undefined) ||
       pictures.live !== undefined ||
-      (camera.watch && watch !== undefined),
+      (camera.watch && (watch !== undefined || socket !== undefined)),
   );
   const live = $derived(livable && playing);
   // Whether the last live view did not start, which the picture says until
@@ -96,6 +105,21 @@
     playing = false;
     stalled = true;
     held = true;
+  };
+
+  // Which carriage the H.264 view runs on. It is chosen again on every play,
+  // so a press after a failure tries the page's preferred one first.
+  let carriage = $derived<'webrtc' | 'socket'>(
+    live && watch !== undefined ? carriageFirst() : 'socket',
+  );
+  const webrtcFailed = (): void => {
+    if (socket === undefined) {
+      fail();
+
+      return;
+    }
+    rememberUnreachable();
+    carriage = 'socket';
   };
 
   const toggle = (): void => {
@@ -150,8 +174,15 @@
         class="absolute inset-0 size-full object-contain"
         onerror={fail}
       />
-    {:else if live && watch !== undefined}
-      <WebrtcView camera={camera.name} label={alt} {watch} onFail={fail} />
+    {:else if live && carriage === 'webrtc' && watch !== undefined}
+      <WebrtcView
+        camera={camera.name}
+        label={alt}
+        {watch}
+        onFail={webrtcFailed}
+      />
+    {:else if live && socket !== undefined}
+      <SocketView open={() => socket(camera.name)} label={alt} onFail={fail} />
     {/if}
     {#if live}
       <Button

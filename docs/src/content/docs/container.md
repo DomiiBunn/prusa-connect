@@ -302,9 +302,11 @@ once you approve it. Publish it, as `-p 9443:9443`. The cameras dial the host's 
 A browser plays an RTSP camera over WebRTC, and the video reaches it on UDP.
 By default the server takes a random UDP port for each viewer and offers the
 browser only the addresses it holds. In a container those are bridge
-addresses, so the browser cannot reach them and the stream never starts.
+addresses, so the browser cannot reach them.
 
-Set one port and the address of the host, then publish that port:
+The live view then falls back to a websocket on the page's own port, which
+needs no setting. It stalls more than WebRTC on a network that drops packets.
+For WebRTC, set one port and the address of the host, then publish that port:
 
 ```yaml
 core:
