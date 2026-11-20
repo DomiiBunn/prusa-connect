@@ -32,7 +32,7 @@ func TestEveryViewerIsServedOnTheOneConfiguredPort(t *testing.T) {
 			}
 		})
 
-		answer, err := engine.Offer(t.Context(), offer, newCamera(t, 40*time.Millisecond))
+		answer, err := engine.Offer(t.Context(), offer, newCamera(t, 40*time.Millisecond).opener())
 		require.NoError(t, err)
 
 		gathered := candidatesOf(t, answer)
@@ -71,7 +71,7 @@ func TestAnAdvertisedAddressIsOfferedBesideTheBoundOnes(t *testing.T) {
 
 	_, offer := newViewer(t)
 
-	answer, err := engine.Offer(t.Context(), offer, newCamera(t, time.Hour))
+	answer, err := engine.Offer(t.Context(), offer, newCamera(t, time.Hour).opener())
 	require.NoError(t, err)
 
 	var sawAdvertised, sawBound bool

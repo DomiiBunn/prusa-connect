@@ -48,6 +48,7 @@
     printers,
     pushUrlOf,
     watch,
+    socket,
     viewOf,
     foot,
   }: PrinterCamerasPanelProps = $props();
@@ -235,6 +236,7 @@
               pictures={picturesOf(camera)}
               alt={altOf(camera.name)}
               {watch}
+              {socket}
               view={moduleView}
               autoplay
               bind:playing={() => playing.has(camera.name), play(camera.name)}

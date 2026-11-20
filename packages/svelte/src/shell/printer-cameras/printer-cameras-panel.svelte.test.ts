@@ -17,6 +17,7 @@ import {
   PRINTERS,
   pushUrlOf,
 } from './cameras.fixtures';
+import { forgetCarriage } from './carriage';
 import PrinterCamerasPanel from './printer-cameras-panel.svelte';
 import type { PrinterCamerasPanelProps } from './types';
 
@@ -31,6 +32,7 @@ const draw = (
     loaded?: boolean;
     withFoot?: boolean;
     watch?: PrinterCamerasPanelProps['watch'];
+    socket?: PrinterCamerasPanelProps['socket'];
   } = {},
 ) =>
   render(PrinterCamerasPanel, {
@@ -45,6 +47,7 @@ const draw = (
       pushUrlOf,
       ...(extra.withFoot === true ? { foot } : {}),
       ...(extra.watch === undefined ? {} : { watch: extra.watch }),
+      ...(extra.socket === undefined ? {} : { socket: extra.socket }),
     },
   });
 
@@ -85,7 +88,20 @@ const showPage = (state: DocumentVisibilityState): void => {
 
 afterEach(() => {
   Reflect.deleteProperty(document, 'visibilityState');
+  forgetCarriage();
 });
+
+// A live socket that closes as soon as it opens, which is what a server that
+// refused the upgrade looks like to the view.
+const deadSocket = (): WebSocket => {
+  const socket = Object.assign(new EventTarget(), {
+    binaryType: 'arraybuffer',
+    close: () => undefined,
+  });
+  queueMicrotask(() => socket.dispatchEvent(new Event('close')));
+
+  return socket as unknown as WebSocket;
+};
 
 describe('PrinterCamerasPanel', () => {
   // ADR-20261119-pxn rules 1 and 2.
@@ -338,6 +354,55 @@ describe('PrinterCamerasPanel', () => {
     await expect
       .element(page.getByRole('button', { name: 'Play shelf-cam live' }))
       .toBeVisible();
+  });
+
+  it('falls back to the live socket when WebRTC does not connect, and goes there first after', async () => {
+    const offers: string[] = [];
+    const sockets: string[] = [];
+    await draw(fakeSettings(), {
+      watch: (_camera: string, offer: string) => {
+        offers.push(offer);
+
+        return Promise.reject(new Error('no route'));
+      },
+      socket: (camera: string) => {
+        sockets.push(camera);
+
+        return deadSocket();
+      },
+    });
+    cardOf('shelf-cam')?.scrollIntoView();
+
+    await expect
+      .element(
+        page.getByText(
+          'The camera did not start streaming. Press play to try again.',
+        ),
+      )
+      .toBeVisible();
+    expect(offers).toHaveLength(1);
+    expect(sockets).toEqual(['shelf-cam']);
+
+    // WebRTC did not connect on this page, so the next play skips it.
+    await userEvent.click(
+      page.getByRole('button', { name: 'Play shelf-cam live' }),
+    );
+    await expect.poll(() => sockets).toHaveLength(2);
+    expect(offers).toHaveLength(1);
+  });
+
+  it('plays an H.264 camera over the live socket alone when nothing answers an offer', async () => {
+    const sockets: string[] = [];
+    await draw(fakeSettings(), {
+      socket: (camera: string) => {
+        sockets.push(camera);
+
+        return deadSocket();
+      },
+    });
+    cardOf('shelf-cam')?.scrollIntoView();
+
+    await expect.poll(() => sockets).toEqual(['shelf-cam']);
   });
 
   it('offers no play button for an H.264 camera when nothing can answer the offer', async () => {
