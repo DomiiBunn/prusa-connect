@@ -18,6 +18,7 @@ import {
   pushUrlOf,
 } from './cameras.fixtures';
 import { forgetCarriage } from './carriage';
+import { forgetFrames, keepFrame, lastFrame } from './last-frames';
 import PrinterCamerasPanel from './printer-cameras-panel.svelte';
 import type { PrinterCamerasPanelProps } from './types';
 
@@ -89,6 +90,7 @@ const showPage = (state: DocumentVisibilityState): void => {
 afterEach(() => {
   Reflect.deleteProperty(document, 'visibilityState');
   forgetCarriage();
+  forgetFrames();
 });
 
 // A live socket that closes as soon as it opens, which is what a server that
@@ -389,6 +391,28 @@ describe('PrinterCamerasPanel', () => {
     );
     await expect.poll(() => sockets).toHaveLength(2);
     expect(offers).toHaveLength(1);
+  });
+
+  it('shows the last frame grayed out while a live view starts', async () => {
+    const source = document.createElement('canvas');
+    source.width = 16;
+    source.height = 9;
+    keepFrame('shelf-cam', source, source.width, source.height);
+    await expect.poll(() => lastFrame('shelf-cam')).toBeDefined();
+
+    // An answer that never comes, so the view stays starting.
+    await draw(fakeSettings(), {
+      watch: () => new Promise<string>(() => undefined),
+    });
+    cardOf('shelf-cam')?.scrollIntoView();
+
+    await expect
+      .poll(() =>
+        cardOf('shelf-cam')?.querySelector(
+          `img.grayscale[src="${lastFrame('shelf-cam') ?? ''}"]`,
+        ),
+      )
+      .not.toBe(null);
   });
 
   it('plays an H.264 camera over the live socket alone when nothing answers an offer', async () => {

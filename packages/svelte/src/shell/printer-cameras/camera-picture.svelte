@@ -22,6 +22,7 @@
   import { t } from '../../i18n';
   import { AspectRatio, Button } from '../../primitives';
   import { carriageFirst, rememberUnreachable } from './carriage';
+  import { lastFrame } from './last-frames';
   import SocketView from './socket-view.svelte';
   import type { CameraPictures, CameraSocket, CameraWatch } from './types';
   import WebrtcView from './webrtc-view.svelte';
@@ -122,6 +123,21 @@
     carriage = 'socket';
   };
 
+  // Whether an H.264 view has a moving picture on screen. Until it does, the
+  // last frame of this camera is shown grayed out, or the still when there is
+  // none, so starting a view never blanks the picture.
+  let showing = $state(false);
+  const onPicture = (now: boolean): void => {
+    showing = now;
+  };
+  const previous = $derived(lastFrame(camera.name));
+  const h264 = $derived(view === undefined && pictures.live === undefined);
+  const faded = $derived.by((): string | undefined => {
+    if (!h264) return undefined;
+    if (live) return showing ? undefined : (previous ?? still);
+    return still === undefined ? previous : undefined;
+  });
+
   const toggle = (): void => {
     stalled = false;
     playing = !playing;
@@ -163,6 +179,13 @@
         class="absolute inset-0 size-full object-contain"
       />
     {/if}
+    {#if faded !== undefined}
+      <img
+        src={faded}
+        alt={live || still !== undefined ? '' : alt}
+        class="absolute inset-0 size-full object-contain opacity-60 grayscale"
+      />
+    {/if}
     {#if live && view !== undefined}
       <div class="absolute inset-0">
         {@render view(camera)}
@@ -180,9 +203,16 @@
         label={alt}
         {watch}
         onFail={webrtcFailed}
+        {onPicture}
       />
     {:else if live && socket !== undefined}
-      <SocketView open={() => socket(camera.name)} label={alt} onFail={fail} />
+      <SocketView
+        camera={camera.name}
+        open={() => socket(camera.name)}
+        label={alt}
+        onFail={fail}
+        {onPicture}
+      />
     {/if}
     {#if live}
       <Button

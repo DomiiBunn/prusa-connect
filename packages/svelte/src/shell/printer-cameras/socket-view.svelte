@@ -11,22 +11,34 @@
   import { onMount } from 'svelte';
 
   import { pictureOf } from './h264';
+  import { keepFrame } from './last-frames';
   import { LiveDecoder } from './live-decoder';
 
   let {
+    camera,
     open,
     label,
     onFail,
+    onPicture,
   }: {
+    camera: string;
     /** Opens the live socket. */
     open: () => WebSocket;
     /** What a screen reader says the video is. */
     label: string;
     /** Called once when the live view could not start, or stopped. */
     onFail: () => void;
+    /** Told whether a moving picture is on screen. */
+    onPicture: (showing: boolean) => void;
   } = $props();
 
   let canvas = $state<HTMLCanvasElement | undefined>(undefined);
+  // Whether the canvas holds a picture from before the decoder last started,
+  // which is drawn grayed out until a new one covers it.
+  let waiting = $state(true);
+  // The canvas last drawn on, held apart from the binding, which is cleared
+  // before the teardown that keeps its frame runs.
+  let drawn: HTMLCanvasElement | undefined;
 
   const draw = (frame: VideoFrame): void => {
     const target = canvas;
@@ -37,6 +49,11 @@
       target.height = frame.displayHeight;
     }
     drawing.drawImage(frame, 0, 0);
+    drawn = target;
+    if (waiting) {
+      waiting = false;
+      onPicture(true);
+    }
   };
 
   onMount(() => {
@@ -59,6 +76,10 @@
       chunk: (init) => new EncodedVideoChunk(init),
       draw,
       fail,
+      restart: () => {
+        waiting = true;
+        onPicture(false);
+      },
     });
 
     let socket: WebSocket;
@@ -83,6 +104,10 @@
       ended = true;
       socket.close();
       decoder.close();
+      if (drawn !== undefined && !waiting) {
+        keepFrame(camera, drawn, drawn.width, drawn.height);
+      }
+      onPicture(false);
     };
   });
 </script>
@@ -90,5 +115,8 @@
 <!-- A canvas is not an image a screen reader names, so the label sits on a
      wrapper that is. -->
 <div class="absolute inset-0" role="img" aria-label={label}>
-  <canvas bind:this={canvas} class="size-full object-contain"></canvas>
+  <canvas
+    bind:this={canvas}
+    class={['size-full object-contain', waiting && 'opacity-60 grayscale']}
+  ></canvas>
 </div>
