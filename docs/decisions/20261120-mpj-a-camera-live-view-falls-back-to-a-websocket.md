@@ -37,7 +37,9 @@ first try.
    a keyframe, then the access unit in Annex-B framing. The first message is a
    keyframe, and every keyframe carries the parameter sets.
 4. The browser decodes the socket with WebCodecs. A browser without WebCodecs
-   says the view did not start, as ADR-20261119-pxn rule 3 holds.
+   says the view did not start, as ADR-20261119-pxn rule 3 holds. A picture
+   that does not decode costs the pictures up to the next keyframe, not the
+   view. The view ends when five decoders fail in a row with nothing drawn.
 5. A viewer about a second behind skips to the next keyframe, on the server
    and in the browser.
 6. The live socket opens the camera before the upgrade, so its refusals are
@@ -51,8 +53,8 @@ first try.
 The `cameralive_test.go` tests hold rules 3, 5 and 6 on the server, and
 `TestEveryKeyframeOnTheLiveSocketCarriesTheParameterSets` holds rule 3's
 parameter sets. `TestAViewerThatNeverDialsNeverOpensTheCamera` holds rule 7.
-The `PrinterCamerasPanel` tests hold rules 1 and 2, and the `h264` tests hold
-the framing the browser reads.
+The `PrinterCamerasPanel` tests hold rules 1 and 2, the `LiveDecoder` tests
+hold rule 4, and the `h264` tests hold the framing the browser reads.
 
 ## rejected
 
