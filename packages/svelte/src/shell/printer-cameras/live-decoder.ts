@@ -46,6 +46,7 @@ export class LiveDecoder {
   readonly #chunk: ChunkOf;
   readonly #draw: (frame: VideoFrame) => void;
   readonly #fail: () => void;
+  readonly #restart: () => void;
 
   #decoder: PictureDecoder;
   #configured = false;
@@ -60,11 +61,14 @@ export class LiveDecoder {
     draw: (frame: VideoFrame) => void;
     /** Called once, when the camera's pictures no longer decode at all. */
     fail: () => void;
+    /** Called when a decoder failed and the next keyframe is awaited. */
+    restart?: () => void;
   }) {
     this.#open = options.open;
     this.#chunk = options.chunk;
     this.#draw = options.draw;
     this.#fail = options.fail;
+    this.#restart = options.restart ?? (() => undefined);
     this.#decoder = this.#fresh();
   }
 
@@ -145,8 +149,8 @@ export class LiveDecoder {
     this.#decoder = this.#fresh();
     this.#configured = false;
     this.#skipping = false;
+    this.#restart();
 
     return true;
   }
-
 }

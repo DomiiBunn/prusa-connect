@@ -13,6 +13,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
 
+  import { keepFrame } from './last-frames';
   import type { CameraWatch } from './types';
 
   let {
@@ -20,6 +21,7 @@
     label,
     watch,
     onFail,
+    onPicture,
   }: {
     camera: string;
     /** What a screen reader says the video is. */
@@ -27,9 +29,14 @@
     watch: CameraWatch;
     /** Called once when the live view could not start. */
     onFail: () => void;
+    /** Told whether a moving picture is on screen. */
+    onPicture: (showing: boolean) => void;
   } = $props();
 
   let video = $state<HTMLVideoElement | undefined>(undefined);
+  // The video that played, held apart from the binding, which is cleared
+  // before the teardown that keeps its frame runs.
+  let played: HTMLVideoElement | undefined;
 
   // How long the browser may take to find its own candidates. On a network
   // with no ICE server it finds its host candidates in well under a second,
@@ -94,7 +101,11 @@
     return () => {
       clearTimeout(deadline);
       ended.abort();
+      if (played !== undefined && played.videoWidth > 0) {
+        keepFrame(camera, played, played.videoWidth, played.videoHeight);
+      }
       connection.close();
+      onPicture(false);
     };
   });
 </script>
@@ -106,4 +117,8 @@
   autoplay
   muted
   playsinline
+  onplaying={(event) => {
+    played = event.currentTarget;
+    onPicture(true);
+  }}
 ></video>

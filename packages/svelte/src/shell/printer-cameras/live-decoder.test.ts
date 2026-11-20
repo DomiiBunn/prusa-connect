@@ -128,6 +128,25 @@ describe('LiveDecoder', () => {
     expect(h.failed()).toBe(0);
   });
 
+  it('says it waits for a keyframe again after a decoder failed', () => {
+    let restarts = 0;
+    let current: FakeDecoder | undefined;
+    const live = new LiveDecoder({
+      open: (output, error) => (current = new FakeDecoder(output, error)),
+      chunk: (init) => ({ type: init.type }) as EncodedVideoChunk,
+      draw: () => undefined,
+      fail: () => undefined,
+      restart: () => {
+        restarts += 1;
+      },
+    });
+    live.take(KEY, 1);
+    expect(restarts).toBe(0);
+
+    current?.breaks();
+    expect(restarts).toBe(1);
+  });
+
   it('ignores a failed decoder that reports after it was replaced', () => {
     const h = harness();
     const first = h.current();

@@ -42,13 +42,17 @@ somebody can see it costs the camera nothing while nobody does.
 5. Rule 3 of ADR-20261106-xm4 otherwise holds. The still frame stays under
    the live view until the first frame covers it. The picture says it is live
    only while it plays.
+6. A live view keeps the last frame it drew for as long as the page is open.
+   That frame is shown grayed out while a view of the camera starts, and in
+   place of a still the camera does not keep, so the picture never goes
+   blank.
 
 ## enforcement
 
 The `whileSeen` tests hold rule 1: on screen and shown, each change reported
 once, and nothing reported after the picture is gone. The `PrinterCamerasPanel`
 tests hold rules 2 and 3. The `PrinterFrame` and printers page tests hold rule
-1 for the printers page.
+1 for the printers page, and the `PrinterCamerasPanel` tests hold rule 6.
 
 ## rejected
 
