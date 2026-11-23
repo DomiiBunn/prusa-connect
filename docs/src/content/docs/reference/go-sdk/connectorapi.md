@@ -2050,7 +2050,8 @@ Driver is a printer dialect. It is registered at compile time and keeps no per-d
 ```go
 type Endpoint struct {
     // Address is the driver-specific location of the device, such as a host and
-    // port or a serial device path.
+    // port or a serial device path. The host refuses an address holding "@" or
+    // "%40", so a driver never receives a user name or password here.
     Address string `json:"address"`
     // Options carries driver-specific settings the host does not interpret.
     Options map[string]string `json:"options,omitempty"`
