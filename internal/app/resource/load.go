@@ -245,8 +245,10 @@ func document(read inputs) (Document, error) {
 	}
 
 	doc := merge(fileEntries, overlayEntries, read.version)
-	doc.Failures = slices.Concat(failures, overlayFailures)
-	doc.Endpoints = declaredEndpoints(overlay)
+
+	endpoints, endpointFailures := declaredEndpoints(overlay)
+	doc.Endpoints = endpoints
+	doc.Failures = slices.Concat(failures, overlayFailures, endpointFailures)
 
 	slices.SortFunc(doc.Failures, func(a, b Failure) int { return strings.Compare(a.Key, b.Key) })
 

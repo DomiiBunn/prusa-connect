@@ -2,6 +2,7 @@ package resource
 
 import (
 	"context"
+	"fmt"
 	"maps"
 	"slices"
 	"strconv"
@@ -347,15 +348,32 @@ func (s *Store) readEndpoints(ctx context.Context, principal, op string) (endpoi
 		return endpointRead{}, s.internal("parse the overlay", err)
 	}
 
-	return endpointRead{endpoints: declaredEndpoints(overlay), version: read.version}, nil
+	endpoints, _ := declaredEndpoints(overlay)
+
+	return endpointRead{endpoints: endpoints, version: read.version}, nil
 }
 
 // declaredEndpoints is the overlay's list, copied and ordered by name, so two
 // reads of the same bytes give the same answer.
-func declaredEndpoints(overlay overlayFile) []Endpoint {
+//
+// A stored row whose address holds a credential is neither listed nor
+// dialled, and its failure names the endpoint without the address.
+func declaredEndpoints(overlay overlayFile) ([]Endpoint, []Failure) {
 	out := make([]Endpoint, 0, len(overlay.Endpoints))
 
+	var failures []Failure
+
 	for _, stored := range overlay.Endpoints {
+		if holdsUserInfo(stored.Address) {
+			failures = append(failures, Failure{
+				Key: "endpoints." + stored.Name,
+				Err: fmt.Errorf("%w: endpoint %s: the address carries a user name or password",
+					ErrConfigInvalid, stored.Name),
+			})
+
+			continue
+		}
+
 		copied := stored
 		copied.Options = copyOptions(stored.Options)
 		out = append(out, copied)
@@ -363,7 +381,14 @@ func declaredEndpoints(overlay overlayFile) []Endpoint {
 
 	sortEndpoints(out)
 
-	return out
+	return out, failures
+}
+
+// holdsUserInfo is true for an address that may carry a credential, written
+// plain or percent-encoded. No dialect takes "@" or "%40" in an address, and
+// refusing them keeps a credential out of the overlay, the listing and the log.
+func holdsUserInfo(address string) bool {
+	return strings.Contains(address, "@") || strings.Contains(address, "%40")
 }
 
 // validEndpoint checks a declared endpoint and returns it in the stored form.
@@ -387,13 +412,12 @@ func validEndpoint(name string, desired httpapi.EndpointSpec) (Endpoint, error) 
 			"the address is "+strconv.Itoa(len(address))+" bytes")
 	}
 
-	// A host, a URL or a serial path never holds "@", and a credential in the
-	// address would be stored, listed and logged with it. The detail does not
-	// echo the address, for the same reason.
-	if strings.Contains(address, "@") {
+	// The detail does not echo the address, so a refused credential is not
+	// logged either.
+	if holdsUserInfo(address) {
 		return Endpoint{}, httpfault.RequestInvalid("body.address",
 			"expected an address without a user name or password",
-			"the address carries user information")
+			`the address holds "@" or "%40", which is refused wherever it stands`)
 	}
 
 	options, err := validOptions(desired.Options)

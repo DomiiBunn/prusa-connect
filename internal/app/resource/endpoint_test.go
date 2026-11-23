@@ -184,6 +184,9 @@ func TestAnEndpointIsRefusedBeforeAnythingIsWritten(t *testing.T) {
 		"a bare user and password": {
 			"bench", httpapi.EndpointSpec{Connector: "moonraker", Address: "user:hunter2@host"}, "body.address",
 		},
+		"a percent-encoded user and password": {
+			"bench", httpapi.EndpointSpec{Connector: "moonraker", Address: "user%3Ahunter2%40host"}, "body.address",
+		},
 		"an option value too long": {
 			"bench",
 			httpapi.EndpointSpec{
@@ -236,6 +239,32 @@ func TestAnAddressWithoutUserInformationIsAccepted(t *testing.T) {
 		_, err := h.createEndpoint("bench", desired)
 		require.NoError(t, err, address)
 	}
+}
+
+// TestAnEndpointStoredWithACredentialIsNeitherListedNorDialled holds what the
+// load does with a stored row whose address carries a credential: it reports
+// the endpoint by name and leaves it out of the list, so the credential reaches
+// neither a reader nor the log.
+func TestAnEndpointStoredWithACredentialIsNeitherListedNorDialled(t *testing.T) {
+	t.Parallel()
+
+	h := newHarness(t)
+	h.writeOverlayByHand(`{"version":1,"instances":[],"endpoints":[` +
+		`{"name":"leaky","connector":"moonraker","address":"http://user:hunter2@host:7125","enabled":true},` +
+		`{"name":"bench","connector":"moonraker","address":"192.0.2.10:7125","enabled":true}]}`)
+	require.NoError(t, h.store.Reload(t.Context()))
+
+	doc := h.store.Document()
+	require.Len(t, doc.Endpoints, 1)
+	require.Equal(t, "bench", doc.Endpoints[0].Name)
+	require.Len(t, doc.Failures, 1)
+	require.Equal(t, "endpoints.leaky", doc.Failures[0].Key)
+	require.ErrorIs(t, doc.Failures[0].Err, resource.ErrConfigInvalid)
+	require.NotContains(t, doc.Failures[0].Err.Error(), "hunter2")
+
+	listed, err := h.store.ListEndpoints(t.Context(), owner)
+	require.NoError(t, err)
+	require.Len(t, listed.Items, 1)
 }
 
 // TestTheDialLoopIsToldEveryTimeTheAddressListMoves is what makes adding a
