@@ -10,6 +10,7 @@ import (
 	"slices"
 	"time"
 
+	"github.com/prusa3d/prusa-connect/internal/app/config"
 	"github.com/prusa3d/prusa-connect/internal/app/resourcehost"
 	"github.com/prusa3d/prusa-connect/internal/authz"
 	"github.com/prusa3d/prusa-connect/internal/extension/supervised"
@@ -655,4 +656,25 @@ func intervalMS(declared time.Duration) int64 {
 	}
 
 	return declared.Milliseconds()
+}
+
+// closeRelay releases the camera relay's UDP port once the HTTP surface that
+// opens views has stopped.
+func closeRelay(ctx context.Context, relay *webrtc.Engine, logger *slog.Logger) {
+	if err := relay.Close(); err != nil {
+		logger.WarnContext(ctx, "the media relay did not close", "error", err.Error())
+	}
+}
+
+// newRelay builds the camera relay on the port and addresses the
+// configuration gives browsers to reach it.
+func newRelay(
+	ctx context.Context, logger *slog.Logger, reach config.WebRTC, loopbackOnly bool,
+) (*webrtc.Engine, error) {
+	return webrtc.New(ctx, webrtc.Config{
+		Logger:       logger,
+		LoopbackOnly: loopbackOnly,
+		UDPPort:      reach.UDPPort,
+		Addresses:    reach.Addresses,
+	})
 }

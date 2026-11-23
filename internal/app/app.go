@@ -75,7 +75,6 @@ import (
 	"github.com/prusa3d/prusa-connect/internal/transport/http/httpapi"
 	"github.com/prusa3d/prusa-connect/internal/transport/http/loginguard"
 	"github.com/prusa3d/prusa-connect/internal/transport/stream"
-	"github.com/prusa3d/prusa-connect/internal/transport/webrtc"
 )
 
 // Run starts the core and returns when it has stopped. A caller cancels ctx to
@@ -251,14 +250,6 @@ func serve(
 	)
 
 	return errors.Join(served, supervision.shutdown(ctx, logger, core.ShutdownTimeout))
-}
-
-// closeRelay releases the camera relay's UDP port once the HTTP surface that
-// opens views has stopped.
-func closeRelay(ctx context.Context, relay *webrtc.Engine, logger *slog.Logger) {
-	if err := relay.Close(); err != nil {
-		logger.WarnContext(ctx, "the media relay did not close", "error", err.Error())
-	}
 }
 
 // serveOver builds everything that reads or writes the configured inventory and
@@ -459,12 +450,7 @@ func serveOver(
 	// The camera plane, which an HTTP push and a module's camera.accept both
 	// go through, so both take one permission check and land in one driver.
 	// It is built here, before the first reconcile starts a module.
-	relay, err := webrtc.New(ctx, webrtc.Config{
-		Logger:       logger,
-		LoopbackOnly: opts.LoopbackOnly,
-		UDPPort:      core.WebRTC.UDPPort,
-		Addresses:    core.WebRTC.Addresses,
-	})
+	relay, err := newRelay(ctx, logger, core.WebRTC, opts.LoopbackOnly)
 	if err != nil {
 		return fmt.Errorf("build the media relay: %w", err)
 	}
