@@ -36,6 +36,7 @@
   import { translateFor } from '@prusa/connect-ui/i18n';
   import {
     Badge,
+    Button,
     DataRow,
     type DataRowValue,
     RowList,
@@ -89,6 +90,9 @@
   } = $props();
 
   const t = translateFor(APP_NAMESPACE);
+
+  /** Which trust tooltip a press holds open, if any. */
+  let trustOpen = $state<string | undefined>(undefined);
 
   // Every key is written out rather than assembled from a value.
   const STATE_KEY = {
@@ -232,27 +236,39 @@
      module: green for Prusa Research's own, blue for a reviewed one, red for
      one nobody reviewed. Each level has its own icon too, so the colour is
      never the only sign. Its name is the accessible label, and the tooltip
-     says what the mark means. The icon takes focus, so a keyboard reader can
-     open the tooltip too. -->
-{#snippet trustBadge(row: ExtensionRow)}
+     says what the mark means. A touch screen has no hover, so a press opens
+     the tooltip as well, as the role help in account settings does. `place`
+     tells the table's mark from the stacked row's, which share a row key. -->
+{#snippet trustBadge(row: ExtensionRow, place: 'table' | 'stacked')}
   {@const trust = trustOf(row)}
   {@const noteKey = TRUST_NOTE_KEY[row.trust ?? '']}
+  {@const openKey = `${place}:${row.key}`}
   {#if trust !== undefined}
-    <Tooltip>
+    <Tooltip
+      bind:open={
+        () => trustOpen === openKey,
+        (open) => {
+          // A press on another mark opens that one first, and this close
+          // comes after it, so it clears only the state that is its own.
+          if (open) trustOpen = openKey;
+          else if (trustOpen === openKey) trustOpen = undefined;
+        }
+      }
+      disableCloseOnTriggerClick
+    >
       <TooltipTrigger>
         {#snippet child({ props })}
-          <!-- Nothing happens on a press, so the mark is an image and not a
-               button. It still takes focus, so the tooltip opens from the
-               keyboard. -->
-          <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-          <span
+          <Button
             {...props}
-            tabindex={0}
-            role="img"
-            class="inline-flex rounded-sm align-middle focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:outline-none"
+            variant="ghost"
+            size="sm"
             aria-label={trust}
+            class="size-control-height p-0"
             data-part="trust"
             data-trust={row.trust}
+            onclick={() => {
+              trustOpen = openKey;
+            }}
           >
             {#if row.trust === 'official'}
               <BadgeCheckIcon aria-hidden="true" class="size-4 text-success" />
@@ -264,7 +280,7 @@
                 class="size-4 text-destructive"
               />
             {/if}
-          </span>
+          </Button>
         {/snippet}
       </TooltipTrigger>
       <TooltipContent>
@@ -386,7 +402,7 @@
           aria-busy={catalogue.acting === row.module}
         >
           <TableCell class="w-px pe-0" data-part="trust-cell">
-            {@render trustBadge(row)}
+            {@render trustBadge(row, 'table')}
           </TableCell>
           <TableCell class="max-w-md">
             <!-- A table cell keeps to one line, and white-space is inherited,
@@ -501,7 +517,7 @@
       {/snippet}
       {#snippet rowTrust()}
         <span class="relative z-10 inline-flex items-center gap-2">
-          {@render trustBadge(row)}
+          {@render trustBadge(row, 'stacked')}
           {@render marketplaceLink(row)}
         </span>
       {/snippet}
