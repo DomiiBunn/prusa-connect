@@ -4075,7 +4075,7 @@ export interface components {
             state: "connected" | "connecting" | "disconnected" | "error" | "unknown";
         };
         ConnectorEndpoint: {
-            /** @description What the connector dials. The dialect decides what it means: a host and port, a URL, or a serial device path. */
+            /** @description What the connector dials. The dialect decides what it means: a host and port, a URL, or a serial device path. An address carries no user name or password. */
             address: string;
             /** @description The connector instance that dials this address, by the name it is declared under in core.connectors. */
             connector: string;
@@ -4091,7 +4091,7 @@ export interface components {
             version: string;
         };
         ConnectorEndpointBody: {
-            /** @description What the connector dials. The dialect decides what it means: a host and port, a URL, or a serial device path. */
+            /** @description What the connector dials. The dialect decides what it means: a host and port, a URL, or a serial device path. An address carries no user name or password. */
             address: string;
             /** @description The connector instance that dials this address, by the name it is declared under in core.connectors. */
             connector: string;

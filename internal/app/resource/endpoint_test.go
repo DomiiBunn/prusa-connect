@@ -176,6 +176,14 @@ func TestAnEndpointIsRefusedBeforeAnythingIsWritten(t *testing.T) {
 			httpapi.EndpointSpec{Connector: "moonraker", Address: strings.Repeat("a", 254)},
 			"body.address",
 		},
+		"a url with a password": {
+			"bench",
+			httpapi.EndpointSpec{Connector: "moonraker", Address: "http://user:hunter2@host:1"},
+			"body.address",
+		},
+		"a bare user and password": {
+			"bench", httpapi.EndpointSpec{Connector: "moonraker", Address: "user:hunter2@host"}, "body.address",
+		},
 		"an option value too long": {
 			"bench",
 			httpapi.EndpointSpec{
@@ -205,10 +213,28 @@ func TestAnEndpointIsRefusedBeforeAnythingIsWritten(t *testing.T) {
 			location, ok := carried.Params().Get("location")
 			require.True(t, ok, "the refusal names no member")
 			require.Equal(t, tc.at, location.String())
+			require.NotContains(t, err.Error(), "hunter2", "the refusal echoed a credential")
 
 			require.Equal(t, string(before), string(h.overlayBytes()),
 				"a refused endpoint changed the file")
 		})
+	}
+}
+
+// TestAnAddressWithoutUserInformationIsAccepted keeps the refusal of a
+// credential in the address from catching the forms that carry none.
+func TestAnAddressWithoutUserInformationIsAccepted(t *testing.T) {
+	t.Parallel()
+
+	for _, address := range []string{"host:7125", "https://host:7125/path", "/dev/ttyUSB0", "http://[fe80::1%25eth0]:7125"} {
+		h := newHarness(t)
+		require.NoError(t, h.store.Reload(t.Context()))
+
+		desired := benchSpec()
+		desired.Address = address
+
+		_, err := h.createEndpoint("bench", desired)
+		require.NoError(t, err, address)
 	}
 }
 

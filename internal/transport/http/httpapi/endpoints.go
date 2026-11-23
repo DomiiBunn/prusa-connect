@@ -73,7 +73,7 @@ type EndpointSpec struct {
 
 	// Address is handed to the driver as it was written. Its meaning is the
 	// dialect's: a host and port, a URL, or a serial device path.
-	Address string `json:"address" maxLength:"253" minLength:"1" doc:"What the connector dials. The dialect decides what it means: a host and port, a URL, or a serial device path."`
+	Address string `json:"address" maxLength:"253" minLength:"1" doc:"What the connector dials. The dialect decides what it means: a host and port, a URL, or a serial device path. An address carries no user name or password."`
 
 	// Enabled has no default on the wire. A row that arrived without it would
 	// be stored switched off, and a caller adding a printer would watch nothing

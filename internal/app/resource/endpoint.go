@@ -387,6 +387,15 @@ func validEndpoint(name string, desired httpapi.EndpointSpec) (Endpoint, error) 
 			"the address is "+strconv.Itoa(len(address))+" bytes")
 	}
 
+	// A host, a URL or a serial path never holds "@", and a credential in the
+	// address would be stored, listed and logged with it. The detail does not
+	// echo the address, for the same reason.
+	if strings.Contains(address, "@") {
+		return Endpoint{}, httpfault.RequestInvalid("body.address",
+			"expected an address without a user name or password",
+			"the address carries user information")
+	}
+
 	options, err := validOptions(desired.Options)
 	if err != nil {
 		return Endpoint{}, err
