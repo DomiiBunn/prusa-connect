@@ -22,6 +22,10 @@
     type PageSize,
     RadioGroup,
     RadioGroupItem,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
     SettingsPane,
     ToggleGroup,
     ToggleGroupItem,
@@ -46,6 +50,17 @@
   const chooseModuleTheme = (next: string): void => {
     moduleTheme.choose(themes.find((option) => option.key === next));
   };
+
+  // Every choice the dropdown offers, so its trigger can name the one held.
+  const themeItems = $derived([
+    { value: OWN_LOOK, label: t('settingsAppearance.moduleTheme.none') },
+    ...themes.map((option) => ({ value: option.key, label: option.title })),
+  ]);
+
+  const chosenThemeTitle = $derived(
+    themeItems.find((item) => item.value === (moduleTheme.key ?? OWN_LOOK))
+      ?.label ?? t('settingsAppearance.moduleTheme.none'),
+  );
 
   const THEME_ICON = {
     system: MonitorIcon,
@@ -189,50 +204,47 @@
           <h3 class="text-body font-medium">
             {t('settingsAppearance.moduleTheme.label')}
           </h3>
-          <RadioGroup
-            gap="section"
-            class="pt-1"
+          <Select
             value={moduleTheme.key ?? OWN_LOOK}
+            items={themeItems}
             onValueChange={chooseModuleTheme}
-            aria-label={t('settingsAppearance.moduleTheme.label')}
           >
-            <div class="flex items-start gap-3">
-              <RadioGroupItem
+            <SelectTrigger
+              class="w-full max-w-80 min-w-0"
+              aria-label={t('settingsAppearance.moduleTheme.label')}
+            >
+              <!-- Its own span and not SelectValue, which clips a long title
+                   without an ellipsis. -->
+              <span class="min-w-0 truncate">{chosenThemeTitle}</span>
+            </SelectTrigger>
+            <SelectContent class="max-w-(--radix-select-trigger-width)">
+              <SelectItem
                 value={OWN_LOOK}
-                id={`${id}-theme-own`}
-                class="mt-1"
-              />
-              <Label variant="option" for={`${id}-theme-own`}>
+                label={t('settingsAppearance.moduleTheme.none')}
+              >
                 {t('settingsAppearance.moduleTheme.none')}
-              </Label>
-            </div>
-            {#each themes as option (option.key)}
-              <div class="flex items-start gap-3">
-                <RadioGroupItem
-                  value={option.key}
-                  id={`${id}-theme-${option.key}`}
-                  class="mt-1"
-                />
-                <div class="flex min-w-0 flex-col gap-0.5">
-                  <Label variant="option" for={`${id}-theme-${option.key}`}>
-                    {option.title}
-                  </Label>
-                  {#if option.module !== undefined}
-                    <span class="text-sm text-muted-foreground">
-                      {t('settingsAppearance.moduleTheme.from', {
-                        module: option.module,
-                      })}
-                    </span>
-                  {/if}
-                  {#if option.key === moduleTheme.defaultKey}
-                    <span class="text-sm text-muted-foreground">
-                      {t('settingsAppearance.moduleTheme.serverDefault')}
-                    </span>
-                  {/if}
-                </div>
-              </div>
-            {/each}
-          </RadioGroup>
+              </SelectItem>
+              {#each themes as option (option.key)}
+                <SelectItem value={option.key} label={option.title}>
+                  <span class="flex min-w-0 flex-col">
+                    <span class="truncate">{option.title}</span>
+                    {#if option.module !== undefined}
+                      <span class="text-sm text-muted-foreground">
+                        {t('settingsAppearance.moduleTheme.from', {
+                          module: option.module,
+                        })}
+                      </span>
+                    {/if}
+                    {#if option.key === moduleTheme.defaultKey}
+                      <span class="text-sm text-muted-foreground">
+                        {t('settingsAppearance.moduleTheme.serverDefault')}
+                      </span>
+                    {/if}
+                  </span>
+                </SelectItem>
+              {/each}
+            </SelectContent>
+          </Select>
           <span class="text-sm text-muted-foreground">
             {t('settingsAppearance.moduleTheme.note')}
           </span>

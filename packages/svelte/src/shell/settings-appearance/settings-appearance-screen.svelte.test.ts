@@ -70,7 +70,7 @@ describe('the extension theme', () => {
     });
 
     await expect
-      .element(page.getByRole('radiogroup', { name: 'Extension theme' }))
+      .element(page.getByRole('combobox', { name: 'Extension theme' }))
       .not.toBeInTheDocument();
   });
 
@@ -78,22 +78,19 @@ describe('the extension theme', () => {
     await render(SettingsAppearanceScreen, {
       props: { home: new Preferences(null), themes: [OCEAN] },
     });
+    const picker = page.getByRole('combobox', { name: 'Extension theme' });
 
-    await expect
-      .element(page.getByRole('radio', { name: 'None' }))
-      .toBeChecked();
+    await expect.element(picker).toHaveTextContent('None');
+
+    await picker.click();
     await expect.element(page.getByText('From Acme themes')).toBeVisible();
-
-    await page.getByRole('radio', { name: 'Ocean' }).click();
-    await expect
-      .element(page.getByRole('radio', { name: 'Ocean' }))
-      .toBeChecked();
+    await page.getByRole('option', { name: /Ocean/ }).click();
+    await expect.element(picker).toHaveTextContent('Ocean');
     expect(linked()).toBe(OCEAN.href);
 
-    await page.getByRole('radio', { name: 'None' }).click();
-    await expect
-      .element(page.getByRole('radio', { name: 'None' }))
-      .toBeChecked();
+    await picker.click();
+    await page.getByRole('option', { name: 'None' }).click();
+    await expect.element(picker).toHaveTextContent('None');
     expect(linked()).toBeUndefined();
   });
 });
