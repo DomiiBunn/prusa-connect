@@ -1,8 +1,9 @@
 # Ocean theme
 
 An example extension theme. It is an asset module whose manifest offers one
-stylesheet under `ui.themes`. Once it is installed and on, pick it under
-Settings → Appearance → Extension theme.
+stylesheet under `ui.themes` and runs no script. Once it is installed and on,
+pick it under Settings → Appearance → Extension theme, or make it the server's
+default with `core.frontend.extension_theme: <namespace>/ocean`.
 
 `make demo-modules` builds a release of it beside the other examples, under
 `bin/demo-modules/ocean-theme`. Run `prusa-connect module add` on that

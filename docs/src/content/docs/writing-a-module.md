@@ -1005,11 +1005,11 @@ first opens or your first section first renders.
 
 A module can offer a look for the whole app under `ui.themes`. Each entry names
 an `id`, the `title` the picker reads and a `stylesheet` inside the bundle that
-ends in `.css`. A bundle offers at most eight.
+ends in `.css`. A bundle offers at most eight. A bundle that offers themes and
+nothing else runs no script, so it may leave `entry` out.
 
 ```yaml
 ui:
-  entry: ui/index.js
   library: ">=0.0.1 <1.0.0"
   themes:
     - id: ocean
@@ -1018,8 +1018,11 @@ ui:
 ```
 
 A person picks one under Settings, Appearance, Extension theme, and the browser
-remembers the pick. The app links the stylesheet after its own, so a rule in it
-may override anything the app draws. The tokens in `@prusa/connect-ui/tokens.css`
+remembers the pick. An operator names the theme a browser with no pick draws in
+with `core.frontend.extension_theme`. The page links the stylesheet before its
+first paint, after its own styles, so a rule in it may override anything the
+app draws. The stylesheet, and the fonts and pictures in its directory, are
+served without a sign-in, so the sign-in page is drawn in the theme too. The tokens in `@prusa/connect-ui/tokens.css`
 are what every component reads, so a theme that changes only those keeps
 working when the app changes. Class names and layout are not part of the
 contract, and a rule that reaches past the tokens may break on an upgrade. When

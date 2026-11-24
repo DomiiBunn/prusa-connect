@@ -224,6 +224,11 @@
                       })}
                     </span>
                   {/if}
+                  {#if option.key === moduleTheme.defaultKey}
+                    <span class="text-sm text-muted-foreground">
+                      {t('settingsAppearance.moduleTheme.serverDefault')}
+                    </span>
+                  {/if}
                 </div>
               </div>
             {/each}

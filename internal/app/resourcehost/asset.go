@@ -158,8 +158,13 @@ func bundleUI(root *os.Root, namespace string) (*httpapi.ResourceUI, error) {
 		return nil, nil //nolint:nilnil // a module that declares no ui block draws nothing.
 	}
 
+	entry := ""
+	if declared.UI.Entry != "" {
+		entry = httpapi.ModuleUIPath(namespace) + declared.UI.Entry
+	}
+
 	return &httpapi.ResourceUI{
-		EntryURL:    httpapi.ModuleUIPath(namespace) + declared.UI.Entry,
+		EntryURL:    entry,
 		Library:     declared.UI.Library,
 		Contributes: contributesOf(declared.UI.Contributes),
 		Exports:     exportsOf(declared.UI.Exports),

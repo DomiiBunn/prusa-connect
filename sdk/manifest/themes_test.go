@@ -90,3 +90,27 @@ func TestTheThemeListIsBounded(t *testing.T) {
 
 	refuse(t, withThemes("["+strings.Join(entries, ",")+"]"), "the limit is")
 }
+
+func TestABundleThatOnlyOffersThemesNeedsNoEntry(t *testing.T) {
+	t.Parallel()
+
+	document := withUI(`{"library":">=0.3.0 <1.0.0",` +
+		`"themes":[{"id":"ocean","title":"Ocean","stylesheet":"ocean.css"}]}`)
+
+	held, err := manifest.Parse("module.yaml", []byte(document), decode)
+	if err != nil {
+		t.Fatalf("a bundle of themes alone was refused: %v", err)
+	}
+
+	if held.UI.Entry != "" || len(held.UI.Themes) != 1 {
+		t.Errorf("the block read as entry %q and themes %+v", held.UI.Entry, held.UI.Themes)
+	}
+}
+
+func TestABundleWithThemesAndPagesStillNeedsAnEntry(t *testing.T) {
+	t.Parallel()
+
+	refuse(t, withUI(`{"library":">=0.3.0 <1.0.0",`+
+		`"themes":[{"id":"ocean","title":"Ocean","stylesheet":"ocean.css"}],`+
+		`"contributes":{"pages":[{"path":"spools","title":"Spools"}]}}`), "entry is empty")
+}

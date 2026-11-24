@@ -148,8 +148,10 @@
   $effect(() => {
     if (!useServerAppearance || !settings.asked) return;
     const preferredTheme = settings.theme;
+    const extensionTheme = settings.extensionTheme;
     untrack(() => {
       theme.useDefault(preferredTheme);
+      moduleTheme.useDefault(extensionTheme);
     });
   });
   const appVersion = new AppVersion(client);

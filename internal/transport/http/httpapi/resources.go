@@ -435,7 +435,7 @@ type ModuleDependant struct {
 type ResourceUI struct {
 	// EntryURL is where the bundle's entry module is served, an absolute path
 	// under the module's own prefix. The frontend imports it as an ES module.
-	EntryURL string `json:"entry_url" doc:"Where the bundle's entry module is served. Import it as an ES module."`
+	EntryURL string `json:"entry_url,omitempty" doc:"Where the bundle's entry module is served. Import it as an ES module. Absent for a bundle that offers themes and nothing else, which runs no script."`
 	// Library is the range of the component library the bundle compiled
 	// against, as the manifest declared it. The frontend checks its own
 	// version against it before the import.

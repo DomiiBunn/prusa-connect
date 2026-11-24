@@ -263,13 +263,16 @@ if [ "$NOZZLE_STALE" = 1 ]; then
 fi
 
 if [ "$OCEAN_STALE" = 1 ]; then
-	# One stylesheet and an entry that registers nothing, so there is nothing
-	# to build: the release is the example's own files.
+	# One stylesheet and no script, so there is nothing to build: the release
+	# is the example's own files.
 	rm -rf "$OCEAN_RELEASE"
 	mkdir -p "$OCEAN_RELEASE"
 	cp "$OCEAN_DIR/module.yaml" "$OCEAN_RELEASE/module.yaml"
 	cp -R "$OCEAN_DIR/ui" "$OCEAN_RELEASE/ui"
-	built_bundle "$OCEAN_RELEASE"
+	if [ ! -f "$OCEAN_RELEASE/ui/ocean.css" ]; then
+		echo "FAIL  $OCEAN_RELEASE is missing ui/ocean.css"
+		exit 1
+	fi
 	checksums "$OCEAN_RELEASE"
 
 	step "the ocean-theme release packs" archive "$OCEAN_RELEASE" "$OCEAN_ARCHIVE"
