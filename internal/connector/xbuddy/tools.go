@@ -31,8 +31,8 @@ import (
 //
 //   - with a fitted and enabled MMU, entry n is slot "0.<n-1>" of head "0",
 //     and the nozzle of the first entry is the head's
-//   - otherwise entry n is head "<n-1>", and every head the model has room for
-//     that INFO does not list is disabled
+//   - otherwise entry n is head "<n-1>", and every head up to the number the
+//     model is built with that INFO does not list is disabled
 //   - "---" is connectorapi.NoMaterial
 //
 // # The tree shape
@@ -56,28 +56,51 @@ const (
 	layoutFeeder
 )
 
-// headCounts is how many heads a model has room for, where it is more than
-// one: XL is five (EXTRUDERS in include/marlin/Configuration_XL.h) and an INDX
-// is eight (the HAS_INDX() branch of Configuration_COREONE.h). Every other
-// model this driver knows has one.
+// headCounts is the number of heads each multi-head model is built with,
+// smallest first: XL is five (EXTRUDERS in include/marlin/Configuration_XL.h).
+// An INDX is built with four heads or with eight, and the firmware counts
+// eight for both (EXTRUDERS in the HAS_INDX() branch of Configuration_COREONE.h).
+// Every other model this driver knows has one.
 //
-//nolint:gochecknoglobals,mnd // a fixed table, transcribed and read-only.
-var headCounts = map[string]int{"XL": 5, "CoreOne_INDX": 8, "CoreOneL_INDX": 8}
+//nolint:gochecknoglobals // a fixed table, transcribed and read-only.
+var headCounts = map[string][]int{"XL": {5}, "CoreOne_INDX": {4, 8}, "CoreOneL_INDX": {4, 8}}
 
-// headsOf is the number of heads of a model, and false for a model this
-// driver has no figures for.
-func headsOf(model string) (int, bool) {
-	for name, heads := range headCounts {
-		if strings.EqualFold(name, strings.TrimSpace(model)) {
-			return heads, true
-		}
+// headSizes is the numbers of heads a model is built with, smallest first,
+// and nil for a model this driver has no figures for.
+func headSizes(model string) []int {
+	if sizes, known := byModel(headCounts, model); known {
+		return sizes
 	}
 
 	if _, known := buildVolumeOf(model); known {
-		return 1, true
+		return []int{1}
 	}
 
-	return 0, false
+	return nil
+}
+
+// headsOf is the most heads a model has, and false for a model this driver has
+// no figures for.
+func headsOf(model string) (int, bool) {
+	sizes := headSizes(model)
+	if len(sizes) == 0 {
+		return 0, false
+	}
+
+	return slices.Max(sizes), true
+}
+
+// headsDescribed is how many heads a numbered INFO accounts for on a model,
+// given the highest entry it lists: the smallest number of heads the model is
+// built with that reaches that entry, and the entry itself when none does.
+func headsDescribed(model string, highest int) int {
+	for _, size := range headSizes(model) {
+		if size >= highest {
+			return size
+		}
+	}
+
+	return highest
 }
 
 // numberedTool is one entry of the numbered INFO tools block. The values stay
@@ -247,8 +270,7 @@ func numberedInfoTools(info numberedInfo, model string) toolReport {
 		report.heads = []connectorapi.ToolID{"0"}
 		report.sole = "0"
 	} else {
-		heads, _ := headsOf(model)
-		count := max(heads, highest)
+		count := headsDescribed(model, highest)
 		w.set(connectorapi.ToolCountPath, json.RawMessage(strconv.Itoa(count)))
 
 		for n := 1; n <= count; n++ {

@@ -3,7 +3,6 @@ package xbuddy
 import (
 	"encoding/json"
 	"strconv"
-	"strings"
 
 	"github.com/prusa3d/prusa-connect/sdk/connectorapi"
 )
@@ -46,16 +45,27 @@ var buildVolumes = map[string]buildVolume{
 	"CoreOneL_INDX": {x: 301, y: 270, z: 330},
 }
 
-// buildVolumeOf is the volume of a model, matched without regard to case,
-// and false for a model this driver has no figures for.
-func buildVolumeOf(model string) (buildVolume, bool) {
-	for name, volume := range buildVolumes {
-		if strings.EqualFold(name, strings.TrimSpace(model)) {
-			return volume, true
+// byModel is the entry of a table keyed by model whose key names the same
+// model, matched as the host matches one (connectorapi.FoldModel). A model that
+// folds to nothing matches no entry.
+func byModel[T any](table map[string]T, model string) (T, bool) {
+	if folded := connectorapi.FoldModel(model); folded != "" {
+		for name, value := range table {
+			if connectorapi.FoldModel(name) == folded {
+				return value, true
+			}
 		}
 	}
 
-	return buildVolume{}, false
+	var none T
+
+	return none, false
+}
+
+// buildVolumeOf is the volume of a model, and false for a model this driver
+// has no figures for.
+func buildVolumeOf(model string) (buildVolume, bool) {
+	return byModel(buildVolumes, model)
 }
 
 // buildVolumePatches is what one model reports about its volume.

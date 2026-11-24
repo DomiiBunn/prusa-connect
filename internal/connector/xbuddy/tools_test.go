@@ -108,6 +108,42 @@ func TestTheNumberedInfoBecomesTheTree(t *testing.T) {
 			layout: layoutHeads, heads: 8,
 		},
 		{
+			name:  "an INDX in the firmware's spelling with four heads stays four",
+			model: "COREONEINDX",
+			info: `{"tools":{"1":` + numberedEntry("0.40", false, false, "PLA") +
+				`,"4":` + numberedEntry("0.40", false, true, "PETG") + `},"slots":2}`,
+			want: map[string]string{
+				connectorapi.ToolCountPath:                   "4",
+				tool("3", connectorapi.MaterialAbbreviation): `"PETG"`,
+				tool("1", connectorapi.ToolEnabled):          "false",
+			},
+			absent: []string{tool("4", connectorapi.ToolEnabled)},
+			layout: layoutHeads, heads: 4,
+		},
+		{
+			name:  "an INDX L in the firmware's spelling with eight heads",
+			model: "COREONEL-INDX",
+			info: `{"tools":{"1":` + numberedEntry("0.40", false, false, "PLA") +
+				`,"8":` + numberedEntry("0.40", false, true, "PETG") + `},"slots":2}`,
+			want: map[string]string{
+				connectorapi.ToolCountPath:                   "8",
+				tool("7", connectorapi.MaterialAbbreviation): `"PETG"`,
+				tool("6", connectorapi.ToolEnabled):          "false",
+			},
+			layout: layoutHeads, heads: 8,
+		},
+		{
+			name:  "an INDX with three heads listed is a four-head build",
+			model: "CoreOne_INDX",
+			info: `{"tools":{"1":` + numberedEntry("0.40", false, false, "PLA") +
+				`,"3":` + numberedEntry("0.40", false, false, "PETG") + `},"slots":2}`,
+			want: map[string]string{
+				connectorapi.ToolCountPath:          "4",
+				tool("3", connectorapi.ToolEnabled): "false",
+			},
+			layout: layoutHeads, heads: 4,
+		},
+		{
 			name:  "an MK4S with an MMU3 is one head with a feeder of five slots",
 			model: "MK4S",
 			info: `{"tools":{"1":` + numberedEntry("0.40", true, false, "PLA") +
