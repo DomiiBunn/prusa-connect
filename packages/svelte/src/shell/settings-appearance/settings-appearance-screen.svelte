@@ -29,10 +29,23 @@
     viewPreferences,
   } from '../../primitives';
   import { textSize, type TextSize } from '../../styles/text-size.svelte';
+  import { moduleTheme } from '../../styles/module-theme.svelte';
   import { theme, type ThemePreference } from '../../styles/theme.svelte';
   import type { SettingsAppearanceScreenProps } from './types';
 
-  let { home, dashboards = true }: SettingsAppearanceScreenProps = $props();
+  let {
+    home,
+    dashboards = true,
+    themes = [],
+  }: SettingsAppearanceScreenProps = $props();
+
+  // The value the app's own look stands under. A key always holds a slash,
+  // so no module theme can take it.
+  const OWN_LOOK = 'own';
+
+  const chooseModuleTheme = (next: string): void => {
+    moduleTheme.choose(themes.find((option) => option.key === next));
+  };
 
   const THEME_ICON = {
     system: MonitorIcon,
@@ -171,6 +184,55 @@
           {/each}
         </ToggleGroup>
       </div>
+      {#if themes.length > 0}
+        <div class="flex flex-col gap-2">
+          <h3 class="text-body font-medium">
+            {t('settingsAppearance.moduleTheme.label')}
+          </h3>
+          <RadioGroup
+            gap="section"
+            class="pt-1"
+            value={moduleTheme.key ?? OWN_LOOK}
+            onValueChange={chooseModuleTheme}
+            aria-label={t('settingsAppearance.moduleTheme.label')}
+          >
+            <div class="flex items-start gap-3">
+              <RadioGroupItem
+                value={OWN_LOOK}
+                id={`${id}-theme-own`}
+                class="mt-1"
+              />
+              <Label variant="option" for={`${id}-theme-own`}>
+                {t('settingsAppearance.moduleTheme.none')}
+              </Label>
+            </div>
+            {#each themes as option (option.key)}
+              <div class="flex items-start gap-3">
+                <RadioGroupItem
+                  value={option.key}
+                  id={`${id}-theme-${option.key}`}
+                  class="mt-1"
+                />
+                <div class="flex min-w-0 flex-col gap-0.5">
+                  <Label variant="option" for={`${id}-theme-${option.key}`}>
+                    {option.title}
+                  </Label>
+                  {#if option.module !== undefined}
+                    <span class="text-sm text-muted-foreground">
+                      {t('settingsAppearance.moduleTheme.from', {
+                        module: option.module,
+                      })}
+                    </span>
+                  {/if}
+                </div>
+              </div>
+            {/each}
+          </RadioGroup>
+          <span class="text-sm text-muted-foreground">
+            {t('settingsAppearance.moduleTheme.note')}
+          </span>
+        </div>
+      {/if}
     </div>
   </div>
 {/snippet}

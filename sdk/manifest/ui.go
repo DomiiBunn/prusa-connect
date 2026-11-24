@@ -25,6 +25,9 @@ type UI struct {
 	Exports []UIExport
 	// Imports is the components of other modules this bundle draws.
 	Imports []UIImport
+	// Themes is the stylesheets the bundle offers as a look for the whole
+	// app. A person picks at most one.
+	Themes []Theme
 }
 
 // UIExport is one component a bundle hands other bundles.
@@ -132,7 +135,7 @@ func contributesKeys() []string {
 //
 //nolint:gochecknoglobals // closed tables read at parse, never written.
 var (
-	uiKeys      = []string{"entry", "library", "contributes", "exports", "imports"}
+	uiKeys      = []string{"entry", "library", "contributes", "exports", "imports", "themes"}
 	pageKeys    = []string{"path", "title", "icon", "hidden"}
 	sectionKeys = []string{"id", "title"}
 	actionKeys  = []string{"id", "title", "icon", "destructive"}
@@ -213,7 +216,11 @@ func readUI(tree map[string]any) (*UI, error) {
 		return nil, err
 	}
 
-	held.Imports, err = readImports(block)
+	if held.Imports, err = readImports(block); err != nil {
+		return nil, err
+	}
+
+	held.Themes, err = readThemes(block)
 
 	return &held, err
 }

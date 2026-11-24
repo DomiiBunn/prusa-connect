@@ -1001,6 +1001,31 @@ The rail is drawn from the listing and not from your bundle, so your page is in
 the menu before the bundle is fetched. The bundle is imported when your page
 first opens or your first section first renders.
 
+### Offering a theme
+
+A module can offer a look for the whole app under `ui.themes`. Each entry names
+an `id`, the `title` the picker reads and a `stylesheet` inside the bundle that
+ends in `.css`. A bundle offers at most eight.
+
+```yaml
+ui:
+  entry: ui/index.js
+  library: ">=0.0.1 <1.0.0"
+  themes:
+    - id: ocean
+      title: Ocean
+      stylesheet: ui/ocean.css
+```
+
+A person picks one under Settings, Appearance, Extension theme, and the browser
+remembers the pick. The app links the stylesheet after its own, so a rule in it
+may override anything the app draws. The tokens in `@prusa/connect-ui/tokens.css`
+are what every component reads, so a theme that changes only those keeps
+working when the app changes. Class names and layout are not part of the
+contract, and a rule that reaches past the tokens may break on an upgrade. When
+the module is switched off or removed, the app goes back to its own look.
+`examples/ocean-theme` is a theme with no build step.
+
 ## Installing a module
 
 Three commands, on the binary the server already is. They work on a server that
@@ -2528,8 +2553,8 @@ instance, for an enabled and ready module only:
 ```
 
 The app reads that listing, checks `library` against its own version, and
-imports `entry_url` when your page first opens or your first section first
-renders. A range this app is outside of stops it before the import, and the
+imports `entry_url` the first time a person opens your page or the app draws
+one of your sections. A range this app is outside of stops it before the import, and the
 module is named on Settings, Extensions with `library-mismatch` as its reason.
 
 The host object carries `fleet`, the printers the person may see. Your bundle

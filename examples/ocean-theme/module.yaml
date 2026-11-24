@@ -1,0 +1,23 @@
+# A module that is one stylesheet and nothing else: it offers a look for the
+# whole app under ui.themes. A person picks it under Settings, Appearance,
+# Extension theme, and the app links the stylesheet after its own, so it may
+# override anything the app draws.
+#
+# The entry is required by every ui block, so the theme ships one that
+# registers nothing.
+
+name: ocean-theme
+title: Ocean theme
+summary: An example extension theme. It draws the app in blue with rounder corners.
+codeowner: Prusa Research
+kind: asset
+version: 0.1.0
+license: OCL v1.1 + Micro v1 + NoSaaS v1 + SWAtt v1
+
+ui:
+  entry: ui/index.js
+  library: ">=0.0.1 <1.0.0"
+  themes:
+    - id: ocean
+      title: Ocean
+      stylesheet: ui/ocean.css

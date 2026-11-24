@@ -7845,6 +7845,8 @@ export interface components {
             imports?: components["schemas"]["ResourceUIImport"][];
             /** @description The range of @prusa/connect-ui the bundle compiled against, as its manifest declared it. */
             library: string;
+            /** @description The stylesheets this bundle offers as a look for the whole app. A client loads the one a person picked after its own styles, so it may override anything the app draws. */
+            themes?: components["schemas"]["ResourceUITheme"][];
         };
         ResourceUIExport: {
             /**
@@ -7864,6 +7866,20 @@ export interface components {
              * @example spool-picker
              */
             name: string;
+        };
+        ResourceUITheme: {
+            /**
+             * @description The theme's name within the module, one DNS label.
+             * @example ocean
+             */
+            id: string;
+            /** @description Where the theme's stylesheet is served, an absolute path under the module's own prefix. */
+            stylesheet_url: string;
+            /**
+             * @description What the theme picker reads.
+             * @example Ocean
+             */
+            title: string;
         };
         RestartInputBody: {
             /**

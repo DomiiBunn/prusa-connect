@@ -10961,6 +10961,14 @@
           "library": {
             "description": "The range of @prusa/connect-ui the bundle compiled against, as its manifest declared it.",
             "type": "string"
+          },
+          "themes": {
+            "description": "The stylesheets this bundle offers as a look for the whole app. A client loads the one a person picked after its own styles, so it may override anything the app draws.",
+            "items": {
+              "$ref": "#/components/schemas/ResourceUITheme"
+            },
+            "maxItems": 8,
+            "type": "array"
           }
         },
         "required": [
@@ -11012,6 +11020,39 @@
         "required": [
           "module",
           "name"
+        ],
+        "type": "object"
+      },
+      "ResourceUITheme": {
+        "additionalProperties": false,
+        "properties": {
+          "id": {
+            "description": "The theme's name within the module, one DNS label.",
+            "examples": [
+              "ocean"
+            ],
+            "maxLength": 63,
+            "minLength": 1,
+            "type": "string"
+          },
+          "stylesheet_url": {
+            "description": "Where the theme's stylesheet is served, an absolute path under the module's own prefix.",
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": {
+            "description": "What the theme picker reads.",
+            "examples": [
+              "Ocean"
+            ],
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "stylesheet_url"
         ],
         "type": "object"
       },

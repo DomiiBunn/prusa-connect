@@ -164,7 +164,23 @@ func bundleUI(root *os.Root, namespace string) (*httpapi.ResourceUI, error) {
 		Contributes: contributesOf(declared.UI.Contributes),
 		Exports:     exportsOf(declared.UI.Exports),
 		Imports:     importsOf(declared.UI.Imports),
+		Themes:      themesOf(namespace, declared.UI.Themes),
 	}, nil
+}
+
+// themesOf renders the themes a bundle offers, each with the address its
+// stylesheet is served at.
+func themesOf(namespace string, declared []manifest.Theme) []httpapi.ResourceUITheme {
+	out := make([]httpapi.ResourceUITheme, 0, len(declared))
+	for _, theme := range declared {
+		out = append(out, httpapi.ResourceUITheme{
+			ID:            theme.ID,
+			Title:         theme.Title,
+			StylesheetURL: httpapi.ModuleUIPath(namespace) + theme.Stylesheet,
+		})
+	}
+
+	return out
 }
 
 // exportsOf renders the components a bundle exports.
