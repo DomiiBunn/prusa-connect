@@ -50,6 +50,10 @@
   let waiting = $state(true);
 
   onMount(() => {
+    // Read once. A teardown can run after the parent let go of the camera,
+    // and reading the prop then reads the parent's camera that is gone.
+    const name = camera;
+    const told = onPicture;
     let ended = false;
     let failed = false;
     const fail = (): void => {
@@ -64,7 +68,7 @@
       return;
     }
 
-    let session = socketSessions.take(camera);
+    let session = socketSessions.take(name);
     if (session === undefined) {
       try {
         session = new SocketSession(open);
@@ -88,15 +92,10 @@
       ended = true;
       shown.release();
       if (shown.showing) {
-        keepFrame(
-          camera,
-          shown.canvas,
-          shown.canvas.width,
-          shown.canvas.height,
-        );
+        keepFrame(name, shown.canvas, shown.canvas.width, shown.canvas.height);
       }
-      onPicture(false);
-      socketSessions.hold(camera, shown);
+      told(false);
+      socketSessions.hold(name, shown);
     };
   });
 </script>

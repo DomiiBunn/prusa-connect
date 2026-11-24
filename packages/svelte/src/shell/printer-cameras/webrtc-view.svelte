@@ -34,6 +34,10 @@
   let played: HTMLVideoElement | undefined;
 
   onMount(() => {
+    // Read once. A teardown can run after the parent let go of the camera,
+    // and reading the prop then reads the parent's camera that is gone.
+    const name = camera;
+    const told = onPicture;
     let ended = false;
     let failed = false;
     const fail = (): void => {
@@ -42,8 +46,7 @@
       onFail();
     };
 
-    const session =
-      webrtcSessions.take(camera) ?? new WebrtcSession(camera, watch);
+    const session = webrtcSessions.take(name) ?? new WebrtcSession(name, watch);
     session.adopt({
       fail,
       stream: (stream) => {
@@ -55,11 +58,11 @@
       ended = true;
       session.release();
       if (played !== undefined && played.videoWidth > 0) {
-        keepFrame(camera, played, played.videoWidth, played.videoHeight);
+        keepFrame(name, played, played.videoWidth, played.videoHeight);
       }
       if (played !== undefined) played.srcObject = null;
-      onPicture(false);
-      webrtcSessions.hold(camera, session);
+      told(false);
+      webrtcSessions.hold(name, session);
     };
   });
 </script>
