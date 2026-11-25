@@ -59,7 +59,7 @@
         {t('printerDetailFiles.upload.heading', { name: driveName })}
       </h2>
       <!-- Its natural height rather than the listing's. -->
-      <FileDropzone accept={UPLOAD_ACCEPT} {onFiles} />
+      <FileDropzone accept={UPLOAD_ACCEPT} page {onFiles} />
       {#if keep}
         <SaveToStorage {...keep} />
       {/if}

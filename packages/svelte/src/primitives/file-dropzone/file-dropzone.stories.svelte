@@ -19,6 +19,11 @@
      loses nothing. -->
 <Story name="Compact" args={{ compact: true }} />
 
+<!-- Takes a file dropped anywhere on the window. The sheet over the window
+     shows only while files are dragged over it, so at rest this looks like
+     Default. -->
+<Story name="Page" args={{ page: true }} />
+
 <Story name="Dragging Over Highlights The Zone" />
 
 <Story

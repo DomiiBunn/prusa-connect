@@ -492,7 +492,7 @@
                 name: chosen?.display_name ?? storage.storage,
               })}
             </h2>
-            <FileDropzone {accept} onFiles={receive} />
+            <FileDropzone {accept} page onFiles={receive} />
           {/if}
 
           <StorageUploads

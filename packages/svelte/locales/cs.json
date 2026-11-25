@@ -2308,6 +2308,7 @@
   "primitives.dropzone.expected": "Očekává se {accept}",
   "primitives.dropzone.labelAccepting": "Nahrát soubory ({accept})",
   "primitives.dropzone.rejected": "{count, plural, one {{name} nebyl přijat.} few {# soubory nebyly přijaty.} other {# souborů nebylo přijato.}}",
+  "primitives.dropzone.release": "Pusťte soubory k nahrání",
   "primitives.facetPopover.options": "Možnosti: {label}",
   "primitives.faultAlert.report": "Nahlásit problém",
   "primitives.faultAlert.traceId": "ID stopy",

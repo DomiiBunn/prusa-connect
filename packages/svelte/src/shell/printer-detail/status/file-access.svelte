@@ -269,6 +269,7 @@
                 <FileDropzone
                   accept={UPLOAD_ACCEPT}
                   onFiles={dropzone}
+                  page
                   class="flex-1"
                 />
                 {#if keep}
