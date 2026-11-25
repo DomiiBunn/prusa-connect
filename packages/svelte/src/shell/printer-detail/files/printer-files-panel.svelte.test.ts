@@ -784,6 +784,16 @@ describe('PrinterFilesPanel', () => {
       .toBeVisible();
   });
 
+  it('shows Modified beside the upload pane at the widest the page allows', async () => {
+    const { container } = await render(PrinterFilesPanel, {
+      props: props({ onUpload: () => undefined }),
+    });
+    container.style.width = '80rem';
+    await expect
+      .element(page.getByRole('columnheader', { name: 'Modified' }))
+      .toBeVisible();
+  });
+
   it('draws no drop zone without a taker for the files', async () => {
     await render(PrinterFilesPanel, { props: props() });
 

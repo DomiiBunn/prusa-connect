@@ -203,7 +203,7 @@
                field: a toggle the pane overrules would do nothing. -->
           {@render column(
             'modified',
-            'hidden @4xl/printer-file-listing:table-cell',
+            'hidden @3xl/printer-file-listing:table-cell',
           )}
           <TableHead class="sr-only">
             {t('printerDetailFiles.column.actions')}
