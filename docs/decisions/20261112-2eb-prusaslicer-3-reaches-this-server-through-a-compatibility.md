@@ -62,8 +62,10 @@ to the core to print, and the core deletes it once the print has settled
    refusal with status 401 asks the slicer again.
 5. `requestCompatiblePrinter` becomes a browser event, and a module page
    listens for it.
-6. A module page shown with `?embed=1` renders without the sidebar and the
-   header.
+6. A module page or the app pairing page (`/pair`) shown with `?embed=1`
+   renders without the sidebar and the header. The slicer shows the app
+   pairing page in its own window, and the person must not leave the
+   approval through the navigation. Every other core screen keeps them.
 
 ## enforcement
 

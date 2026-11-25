@@ -15,9 +15,16 @@ describe('the embedded page', () => {
     expect(isEmbedded(PATHS.modulePage, '?embed=true')).toBe(false);
   });
 
-  // The core's own screens keep their frame, so the parameter cannot hide
-  // the sign-out or the navigation of a core screen.
-  it('is never a core screen', () => {
+  // PrusaSlicer shows the app pairing page in its own window, and the person
+  // must not leave the approval through the navigation.
+  it('is the app pairing page with embed=1', () => {
+    expect(isEmbedded(PATHS.pair, '?code=ABCD-EFGH&embed=1')).toBe(true);
+    expect(isEmbedded(PATHS.pair, '?code=ABCD-EFGH')).toBe(false);
+  });
+
+  // The other screens of the core keep their frame, so the parameter cannot
+  // hide the sign-out or the navigation of a core screen.
+  it('is never another core screen', () => {
     expect(isEmbedded(PATHS.printers, '?embed=1')).toBe(false);
     expect(isEmbedded(PATHS.home, '?embed=1')).toBe(false);
     expect(isEmbedded(undefined, '?embed=1')).toBe(false);

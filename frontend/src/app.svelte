@@ -113,8 +113,10 @@
     router.replace(withoutSignInFailure(router.path, router.search));
   }
   const Screen = $derived(screenFor(router.pattern));
-  // A module page opened with `?embed=1` draws without the sidebar and the
-  // header (ADR-20261112-2eb rule 6).
+  // A module page or the app pairing page opened with `?embed=1` draws
+  // without the sidebar and the header (ADR-20261112-2eb rule 6). PrusaSlicer
+  // shows the pairing page in its own window, and the person must not leave
+  // the approval through the navigation.
   const embedded = $derived(isEmbedded(router.pattern, router.search));
   // The boundary around a screen that failed, kept so moving to another
   // address served by the same screen draws it again. A move to another

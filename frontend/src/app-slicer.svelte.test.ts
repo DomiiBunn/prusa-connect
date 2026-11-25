@@ -1,5 +1,5 @@
-// The app inside PrusaSlicer and a module page shown embedded
-// (ADR-20261112-2eb rules 4 and 6).
+// The app inside PrusaSlicer, and a module page or the app pairing page shown
+// embedded (ADR-20261112-2eb rules 4 and 6).
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { page } from 'vitest/browser';
 import { render } from 'vitest-browser-svelte';
@@ -175,6 +175,24 @@ describe('a module page shown embedded', () => {
     await expect.element(page.getByLabelText('Username')).toBeVisible();
     await expect
       .element(page.getByTestId('counting-screen'))
+      .not.toBeInTheDocument();
+  });
+});
+
+describe('the app pairing page shown embedded', () => {
+  it('draws without the sidebar and the header', async () => {
+    serve();
+    history.replaceState(null, '', '/pair?code=ABCD-EFGH&embed=1');
+    const { default: App } = await import('./app.svelte');
+
+    await render(App);
+
+    await expect
+      .element(page.getByTestId('counting-screen'))
+      .toBeInTheDocument();
+    expect(document.querySelector('[data-part="embed-frame"]')).not.toBeNull();
+    await expect
+      .element(page.getByRole('navigation').first())
       .not.toBeInTheDocument();
   });
 });
