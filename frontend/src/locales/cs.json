@@ -389,6 +389,8 @@
   "app.settings.extensions.visibility.kind.deviceSection": "Sekce stavu",
   "app.settings.extensions.visibility.kind.deviceTab": "Záložka tiskárny",
   "app.settings.extensions.visibility.kind.fileAction": "Akce souboru",
+  "app.settings.extensions.visibility.kind.jobColumn": "Sloupec v Úlohách",
+  "app.settings.extensions.visibility.kind.jobSection": "Sekce stránky tisku",
   "app.settings.extensions.visibility.kind.page": "Stránka",
   "app.settings.extensions.visibility.kind.printSection": "Sekce dialogu tisku",
   "app.settings.extensions.visibility.label": "Zobrazit {name}",

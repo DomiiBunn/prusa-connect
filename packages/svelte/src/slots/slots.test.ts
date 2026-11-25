@@ -9,7 +9,7 @@ describe('SLOT_NAMES', () => {
   // ADR-20261029-dgv's, the camera section ADR-20261106-xm4's, the camera
   // view ADR-20261106-km2's, the printer file actions ADR-20261118-5q2's, and
   // the device header and row ADR-20261112-62y's.
-  it('publishes the slots of ADR-20260911-4p6 rule 9, ADR-20261118-5q2, ADR-20261008-sww, ADR-20260929-nqd, ADR-20261027-wvj, ADR-20261029-dgv, ADR-20261106-xm4, ADR-20261106-km2, ADR-20261112-62y and ADR-20261124-e2e, and no other', () => {
+  it('publishes the slots of ADR-20260911-4p6 rule 9, ADR-20261118-5q2, ADR-20261008-sww, ADR-20260929-nqd, ADR-20261027-wvj, ADR-20261029-dgv, ADR-20261106-xm4, ADR-20261106-km2, ADR-20261112-62y, ADR-20261124-e2e and ADR-20261123-wfw, and no other', () => {
     expect([...SLOT_NAMES]).toEqual([
       'sidebar',
       'page',
@@ -30,6 +30,8 @@ describe('SLOT_NAMES', () => {
       'device-upload-action',
       'device-header',
       'device-row',
+      'job-column',
+      'job-section',
     ]);
   });
 

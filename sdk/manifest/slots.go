@@ -62,6 +62,12 @@ const (
 	// view of the listing, drawn only for what a bundle registers
 	// (ADR-20261112-62y).
 	SlotDeviceRow SlotName = "device-row"
+	// SlotJobColumn is a column of the module's own in the Jobs listing, one
+	// value for each print. The manifest names its heading.
+	SlotJobColumn SlotName = "job-column"
+	// SlotJobSection is a section of the module's own on a print's page,
+	// under the core's details.
+	SlotJobSection SlotName = "job-section"
 )
 
 // Key is the list under ui.contributes that declares the slot's entries. It is
@@ -121,6 +127,10 @@ const (
 	// ScreenPrintDialog is the dialog that sends one file to the printers a
 	// person ticks.
 	ScreenPrintDialog Screen = "print-dialog"
+	// ScreenJobs is the listing of the prints the printers ran.
+	ScreenJobs Screen = "jobs"
+	// ScreenJobDetail is the page of one print.
+	ScreenJobDetail Screen = "job-detail"
 )
 
 // Doc is the line the reference and the new-module menu print for the screen.
@@ -135,13 +145,15 @@ var screenDocs = map[Screen]string{
 	ScreenDashboard:     "A dashboard, the home page among them",
 	ScreenStorage:       "The storage listing and a file's page",
 	ScreenPrintDialog:   "The print dialog",
+	ScreenJobs:          "The Jobs listing",
+	ScreenJobDetail:     "A print's page",
 }
 
 // Screens is every screen, in the order the menu shows them.
 func Screens() []Screen {
 	return []Screen{
 		ScreenApp, ScreenDashboard, ScreenPrinterDetail, ScreenPrinters, ScreenSettings,
-		ScreenStorage, ScreenPrintDialog,
+		ScreenStorage, ScreenPrintDialog, ScreenJobs, ScreenJobDetail,
 	}
 }
 
@@ -195,6 +207,11 @@ const (
 	// AreaRowEnd is the trailing edge of each printer in the listing, in the
 	// cards, the rows, the table and the camera frames.
 	AreaRowEnd Area = "row-end"
+	// AreaJobColumns is the columns of the Jobs listing after the core's own,
+	// and the values of each print in its narrow rows.
+	AreaJobColumns Area = "job-columns"
+	// AreaJobFoot is the part of a print's page under the core's details.
+	AreaJobFoot Area = "job-foot"
 )
 
 // Areas is every area.
@@ -203,7 +220,7 @@ func Areas() []Area {
 		AreaPage, AreaPanes, AreaCardLine, AreaStatusFoot, AreaInfoConnection, AreaTabs, AreaHeaderActions, AreaGrid,
 		AreaFileActions, AreaPrintOptions, AreaFileBody, AreaFileTabs, AreaCameraFoot, AreaCameraPicture,
 		AreaDeviceFileActions, AreaDropChoices,
-		AreaHeaderFoot, AreaRowEnd,
+		AreaHeaderFoot, AreaRowEnd, AreaJobColumns, AreaJobFoot,
 	}
 }
 
@@ -245,6 +262,9 @@ const (
 	// device id never holds a colon, so the first one splits the two, the way
 	// it splits a file reference.
 	SubjectPrinterFile
+	// SubjectJob hands the id of one print, the one the core's jobs routes
+	// and the job events carry.
+	SubjectJob
 )
 
 // Prop is the name the id is handed under, and empty for SubjectNone.
@@ -258,6 +278,8 @@ func (s Subject) Prop() string {
 		return "camera"
 	case SubjectPrinterFile:
 		return "printerFileRef"
+	case SubjectJob:
+		return "jobId"
 	case SubjectNone:
 		return ""
 	default:
@@ -277,6 +299,8 @@ func (s Subject) Doc() string {
 		return "the camera's name"
 	case SubjectPrinterFile:
 		return "the printer file reference `<device id>:<path>`"
+	case SubjectJob:
+		return "the job id"
 	case SubjectNone:
 		return ""
 	default:
@@ -461,6 +485,24 @@ var slots = []Slot{
 		Subject: SubjectDevice,
 		Where:   "A small control at the end of each printer in every view of the listing, with no frame of the host's.",
 		Offer:   "a small control on each printer in the listing",
+	},
+	{
+		Name:    SlotJobColumn,
+		Screen:  ScreenJobs,
+		Area:    AreaJobColumns,
+		Form:    FormSection,
+		Subject: SubjectJob,
+		Where:   "A column of the module's own in the Jobs listing, after the core's. The title is its heading.",
+		Offer:   "a column of its own in the Jobs listing",
+	},
+	{
+		Name:    SlotJobSection,
+		Screen:  ScreenJobDetail,
+		Area:    AreaJobFoot,
+		Form:    FormSection,
+		Subject: SubjectJob,
+		Where:   "A section on a print's page, under the core's details.",
+		Offer:   "a section on each print's page",
 	},
 }
 

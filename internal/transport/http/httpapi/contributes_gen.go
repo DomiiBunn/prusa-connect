@@ -41,4 +41,8 @@ type ResourceContributes struct {
 	DeviceHeader []ResourceSection `json:"device_header,omitempty" doc:"A place under a printer's header and telemetry, above its tabs, with no frame or heading of the host's."`
 	// DeviceRow is the device-row slot.
 	DeviceRow []ResourceSection `json:"device_row,omitempty" doc:"A small control at the end of each printer in every view of the listing, with no frame of the host's."`
+	// JobColumn is the job-column slot.
+	JobColumn []ResourceSection `json:"job_column,omitempty" doc:"A column of the module's own in the Jobs listing, after the core's. The title is its heading."`
+	// JobSection is the job-section slot.
+	JobSection []ResourceSection `json:"job_section,omitempty" doc:"A section on a print's page, under the core's details."`
 }

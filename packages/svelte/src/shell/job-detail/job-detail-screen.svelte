@@ -62,6 +62,7 @@
     locked,
     onPrint,
     onPrinted,
+    sections,
   }: JobDetailScreenProps = $props();
 
   // The print dialog sends the file again, to the printer that ran it.
@@ -337,6 +338,12 @@
         {/if}
       </CardContent>
     </Card>
+
+    {#if sections && job}
+      <!-- A module's sections about this print (job-section), each a card
+           of its own under the core's details. -->
+      {@render sections(jobId)}
+    {/if}
   {/if}
 </div>
 

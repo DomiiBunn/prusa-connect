@@ -1,0 +1,19 @@
+<script lang="ts">
+  import { heldHost } from './host';
+
+  interface Props {
+    /** The print this cell is about. It is the only prop a cell receives. */
+    jobId: string;
+  }
+
+  let { jobId }: Props = $props();
+
+  const t = heldHost().t;
+</script>
+
+<!-- The host draws this in the module's own column of the Jobs listing, once
+     for each print on the page, with the heading the manifest names. Keep it
+     to one short value, and draw nothing for a print you know nothing about.
+     Each cell is handed one print. A module that reads its values from a
+     server can gather the prints its cells ask for into one request. -->
+<span class="tabular-nums" data-job={jobId}>{t('{{$.Name}}.jobColumn.body')}</span>

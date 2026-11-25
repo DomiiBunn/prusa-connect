@@ -1,6 +1,8 @@
 <script lang="ts">
   import { translateFor } from '@prusa/connect-ui/i18n';
   import { type JobRow, JobsScreen } from '@prusa/connect-ui/shell';
+  import { getSlotContext, SlotOutlet } from '@prusa/connect-ui/slots';
+  import { onMount } from 'svelte';
 
   import { APP_NAMESPACE } from '../i18n';
   import { PATHS, printedHref } from '../routes';
@@ -9,6 +11,23 @@
   const t = translateFor(APP_NAMESPACE);
 
   let { ctx }: { ctx: AppContext } = $props();
+
+  // The columns modules declare for the job-column slot. They come from the
+  // manifests, so a column's heading is drawn before its bundle has loaded,
+  // and each cell's outlet loads it.
+  const slots = getSlotContext();
+  // The headings come from the declarations, and no outlet is on the page to
+  // read them until a column exists. So the screen reads the listing itself,
+  // without importing a bundle: the cells' outlets import the bundles.
+  onMount(() => {
+    void slots?.loader?.discover();
+  });
+  const columns = $derived(
+    (slots?.registry.declaredSections('job-column') ?? []).map((entry) => ({
+      id: `${entry.namespace}.${entry.id}`,
+      label: entry.title,
+    })),
+  );
 
   const fleet = $derived(ctx.fleet);
   const jobs = $derived(ctx.jobs);
@@ -67,8 +86,14 @@
   {/if}
 {/snippet}
 
+{#snippet cell(columnId: string, jobId: string)}
+  <SlotOutlet screen="jobs" name="job-column" entry={columnId} {jobId} />
+{/snippet}
+
 <JobsScreen
   {notice}
+  {columns}
+  {cell}
   {jobs}
   devices={fleet.devices}
   {transitions}

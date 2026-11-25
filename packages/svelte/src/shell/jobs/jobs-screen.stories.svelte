@@ -89,3 +89,18 @@
     <JobsScreen jobs={jobsRead()} store={paged} />
   </div>
 </Story>
+
+<!-- What a module draws in the job-column slot: one value a print, under the
+     heading its manifest names. -->
+{#snippet cell(columnId: string, jobId: string)}
+  <span class="tabular-nums" data-column={columnId} data-job={jobId}>38 g</span>
+{/snippet}
+
+<Story name="With A Module Column" asChild>
+  <JobsScreen
+    jobs={jobsRead()}
+    store={paged}
+    columns={[{ id: 'com.example.spools.used', label: 'Filament' }]}
+    {cell}
+  />
+</Story>

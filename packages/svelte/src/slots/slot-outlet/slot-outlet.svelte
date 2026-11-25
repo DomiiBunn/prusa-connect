@@ -9,7 +9,7 @@
   import type { SectionSlot } from '../generated';
   import type { SlotOutletProps } from './types';
 
-  // Kept whole rather than destructured: `deviceId`, `fileRef` and `camera` each sit on
+  // Kept whole rather than destructured: `deviceId`, `fileRef`, `camera` and `jobId` each sit on
   // only some members of the `SectionOutletTarget` union `SlotOutletProps`
   // extends, and reading them needs the 'in' narrowing below.
   const props: SlotOutletProps = $props();
@@ -40,6 +40,10 @@
     // (ADR-20261112-62y).
     'device-header': 'inline',
     'device-row': 'inline',
+    // A table cell is the frame, and the column's heading is the title the
+    // manifest names, so the value is drawn alone.
+    'job-column': 'inline',
+    'job-section': 'card',
   } as const satisfies Record<SectionSlot, Layout>;
 
   // An entry that names file types is drawn only for a file of one of them
@@ -60,6 +64,7 @@
     if ('deviceId' in props) return { deviceId: props.deviceId };
     if ('fileRef' in props) return { fileRef: props.fileRef };
     if ('camera' in props) return { camera: props.camera };
+    if ('jobId' in props) return { jobId: props.jobId };
 
     return {};
   });
@@ -100,8 +105,10 @@
         <Row {...subject} />
       </section>
     {:else if LAYOUT[props.name] === 'card'}
+      <!-- A card whose component drew nothing, such as a module section about
+           a print the module knows nothing of, is hidden with its title. -->
       <div
-        class={props.class}
+        class={['module-card', props.class]}
         data-slot={props.name}
         data-module={row.namespace}
         data-section={row.id}
@@ -193,3 +200,11 @@
        but the bundle has not, or never will. -->
   <p class="text-sm text-muted-foreground">{t('modulePage.failed')}</p>
 {/if}
+
+<style>
+  /* A card whose component drew nothing hides with its title. The content is
+     the Card's own element, so the selector reaches it through :global. */
+  .module-card:has(:global([data-slot='card-content']:empty)) {
+    display: none;
+  }
+</style>

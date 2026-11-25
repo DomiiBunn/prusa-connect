@@ -979,6 +979,8 @@ Sign in, and the app draws what the manifest declared:
 | `device-upload-action` | `device_upload_action` | A choice in the question a file dropped on a printer's page asks. The action runs once the copy is on its way. |
 | `device-header` | `device_header` | A place under a printer's header and telemetry, above its tabs, with no frame or heading of the host's. |
 | `device-row` | `device_row` | A small control at the end of each printer in every view of the listing, with no frame of the host's. |
+| `job-column` | `job_column` | A column of the module's own in the Jobs listing, after the core's. The title is its heading. |
+| `job-section` | `job_section` | A section on a print's page, under the core's details. |
 
 <!-- end generated -->
 

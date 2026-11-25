@@ -13,6 +13,8 @@ const SLOT_KINDS = [
   ['device_action', 'deviceAction'],
   ['file_action', 'fileAction'],
   ['print_section', 'printSection'],
+  ['job_column', 'jobColumn'],
+  ['job_section', 'jobSection'],
 ] as const;
 
 export interface Contribution {

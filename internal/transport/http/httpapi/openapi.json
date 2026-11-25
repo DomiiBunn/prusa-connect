@@ -9787,6 +9787,26 @@
               "null"
             ]
           },
+          "job_column": {
+            "description": "A column of the module's own in the Jobs listing, after the core's. The title is its heading.",
+            "items": {
+              "$ref": "#/components/schemas/ResourceSection"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
+          "job_section": {
+            "description": "A section on a print's page, under the core's details.",
+            "items": {
+              "$ref": "#/components/schemas/ResourceSection"
+            },
+            "type": [
+              "array",
+              "null"
+            ]
+          },
           "pages": {
             "description": "A whole screen with a route of its own, and an entry in the sidebar unless it is hidden.",
             "items": {

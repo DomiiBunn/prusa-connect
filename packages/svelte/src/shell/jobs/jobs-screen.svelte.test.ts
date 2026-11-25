@@ -1,3 +1,4 @@
+import { createRawSnippet } from 'svelte';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import { render } from 'vitest-browser-svelte';
@@ -135,6 +136,56 @@ describe('JobsScreen', () => {
       .element(header('Started'))
       .toHaveAttribute('aria-sort', 'none');
     await expect.poll(firstTableHref).toBe('/jobs/prn-rack-3%3A40');
+  });
+
+  // The job-column slot: a module's column is headed with the title it
+  // declared, and each print's cell is drawn by the host's snippet, in the
+  // table and in the narrow rows alike.
+  it('draws a module column with its heading and one cell a print', async () => {
+    const cell = createRawSnippet(
+      (columnId: () => string, jobId: () => string) => ({
+        render: () =>
+          `<span data-testid="cell">${columnId()}|${jobId()}</span>`,
+      }),
+    );
+    const columns = [{ id: 'com.example.spools.used', label: 'Filament' }];
+
+    for (const [view, each] of [
+      ['table', 5],
+      ['rows', 5],
+    ] as const) {
+      const viewStore = {
+        read: () => JSON.stringify({ view, pageSize: 5 }),
+        write: () => undefined,
+      };
+      const { unmount } = await render(JobsScreen, {
+        props: { jobs: jobsRead(), store: viewStore, columns, cell },
+      });
+
+      await expect
+        .poll(() => page.getByTestId('cell').elements().length)
+        .toBe(each);
+      expect(
+        page
+          .getByTestId('cell')
+          .elements()[0]
+          ?.textContent.startsWith('com.example.spools.used|'),
+      ).toBe(true);
+      if (view === 'table') {
+        await expect
+          .element(page.getByRole('columnheader', { name: 'Filament' }))
+          .toBeVisible();
+      }
+      await unmount();
+    }
+  });
+
+  it('draws no module column where the host passes none', async () => {
+    await render(JobsScreen, { props: { jobs: jobsRead(), store } });
+
+    await expect
+      .element(page.getByRole('columnheader', { name: 'Filament' }))
+      .not.toBeInTheDocument();
   });
 
   it('narrows by file name and returns to the first page', async () => {

@@ -1,0 +1,18 @@
+<script lang="ts">
+  import { heldHost } from './host';
+
+  interface Props {
+    /** The print this section is about. It is the only prop a section receives. */
+    jobId: string;
+  }
+
+  let { jobId }: Props = $props();
+
+  const t = heldHost().t;
+</script>
+
+<!-- The host draws this under a print's details, with the heading the
+     manifest names. -->
+<p class="text-sm text-muted-foreground" data-job={jobId}>
+  {t('{{$.Name}}.jobSection.body')}
+</p>

@@ -233,6 +233,34 @@ print_section:
     title: My print section
 ```
 
+## The Jobs listing
+
+| slot | area | what the bundle registers | what it is handed | where |
+| --- | --- | --- | --- | --- |
+| `job-column` | `job-columns` | a component | the job id, as `jobId` | A column of the module's own in the Jobs listing, after the core's. The title is its heading. |
+
+`job-column`
+
+```yaml
+job_column:
+  - id: my-job-column
+    title: My job column
+```
+
+## A print's page
+
+| slot | area | what the bundle registers | what it is handed | where |
+| --- | --- | --- | --- | --- |
+| `job-section` | `job-foot` | a component | the job id, as `jobId` | A section on a print's page, under the core's details. |
+
+`job-section`
+
+```yaml
+job_section:
+  - id: my-job-section
+    title: My job section
+```
+
 ## Adding a slot
 
 - **New slot on an existing screen**: add a row to the table in `sdk/manifest/slots.go` and run `make generate-slots`. Then place the outlet the failing test names, write the slot's own scaffold template, and add its branch to the scaffold's locales template. The scaffold's README and changelog templates need no edit: they read the slot table.

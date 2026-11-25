@@ -9,6 +9,8 @@ import PlainSection from '../../test/plain-section.svelte';
 import PropNamesSection from '../../test/prop-names-section.svelte';
 import { readyLoader } from '../../test/fakes';
 import CameraSection from '../../test/camera-section.svelte';
+import EmptySection from '../../test/empty-section.svelte';
+import PlainJobSection from '../../test/plain-job-section.svelte';
 import ThrowingPane from '../../test/throwing-pane.svelte';
 import ThrowingSection from '../../test/throwing-section.svelte';
 import { SlotRegistry } from '../registry.svelte';
@@ -97,6 +99,36 @@ describe('SlotOutlet', () => {
     await expect
       .element(page.getByText('plain section for printer-1'))
       .toBeInTheDocument();
+  });
+
+  // ADR-20261123-wfw rule 6: a print's section is a card, and a section that
+  // draws nothing hides its card, title included.
+  it('hides the card of a job section that draws nothing', async () => {
+    const registry = new SlotRegistry();
+    registry.declare('spools', {
+      job_section: [
+        { id: 'used', title: 'Filament used' },
+        { id: 'quiet', title: 'Nothing here' },
+      ],
+    });
+    registry.registerSection('spools', 'job-section', 'used', PlainJobSection);
+    registry.registerSection('spools', 'job-section', 'quiet', EmptySection);
+
+    await render(SlotOutlet, {
+      props: {
+        screen: 'job-detail',
+        name: 'job-section',
+        jobId: 'job-1',
+        registry,
+      },
+    });
+
+    await expect
+      .element(page.getByRole('heading', { name: 'Filament used', level: 2 }))
+      .toBeVisible();
+    const quiet = document.querySelector<HTMLElement>('[data-section="quiet"]');
+    expect(quiet).not.toBeNull();
+    expect(getComputedStyle(quiet!).display).toBe('none');
   });
 
   // ADR-20261106-xm4 rule 5: no heading, and no room for a camera the module

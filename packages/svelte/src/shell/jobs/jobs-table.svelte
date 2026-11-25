@@ -1,4 +1,6 @@
 <script lang="ts">
+  import type { Snippet } from 'svelte';
+
   import FileCode2Icon from '@lucide/svelte/icons/file-code-2';
 
   import { PRINTER_STATE_LABEL_KEY } from '../../domain';
@@ -25,7 +27,13 @@
   import { stateBadgeVariant } from '../printers/presentation';
   import JobsRowActions from './jobs-row-actions.svelte';
   import { progressTone } from './presentation';
-  import type { JobFieldId, JobRow, JobSort, JobSortColumn } from './types';
+  import type {
+    JobColumn,
+    JobFieldId,
+    JobRow,
+    JobSort,
+    JobSortColumn,
+  } from './types';
 
   let {
     rows,
@@ -34,9 +42,14 @@
     onSort,
     printAgainOf,
     thumbnailFor,
+    columns = [],
+    cell,
   }: {
     rows: readonly JobRow[];
     shows: (field: JobFieldId) => boolean;
+    /** The job-column slot's columns, after the core's own. */
+    columns?: readonly JobColumn[] | undefined;
+    cell?: Snippet<[columnId: string, jobId: string]> | undefined;
     sort: JobSort;
     onSort: (column: JobSortColumn, order: 'asc' | 'desc') => void;
     /** The Print again press for one row, or undefined where the row offers none. */
@@ -95,6 +108,15 @@
             'progress',
             '@max-lg/jobs-table:hidden @xl/jobs-table:w-1/12',
           )}{/if}
+        <!-- A module's columns, headed with the title its manifest names. Like
+             Started, Duration and Progress they fold away in a narrow table,
+             and the rows view still shows their values. -->
+        {#each columns as column (column.id)}
+          <TableHead
+            class="whitespace-nowrap @max-lg/jobs-table:hidden"
+            data-module-column={column.id}>{column.label}</TableHead
+          >
+        {/each}
         <!-- The menu acts on the row the File column names. -->
         <TableHead class="sr-only">{t('jobs.actions')}</TableHead>
       </TableRow>
@@ -179,6 +201,17 @@
               </div>
             </TableCell>
           {/if}
+          {#each columns as column (column.id)}
+            <!-- Under the row's own link, as the core's cells are, so a press
+                 on the value opens the print. A module that draws a control
+                 lifts that element alone. -->
+            <TableCell
+              class="whitespace-nowrap tabular-nums @max-lg/jobs-table:hidden"
+              data-module-column={column.id}
+            >
+              {@render cell?.(column.id, row.id)}
+            </TableCell>
+          {/each}
           <!-- Lifted over the row's own overlay. -->
           <TableCell class={ABOVE_ROW_LINK}>
             <JobsRowActions {row} {printAgainOf} />

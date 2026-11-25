@@ -5,6 +5,7 @@ import { render } from 'vitest-browser-svelte';
 import { Modules } from '@prusa/connect-ui/data';
 import {
   createModuleLoader,
+  type ModuleLoader,
   SLOT_FORMS,
   SLOT_SCREENS,
   SlotRegistry,
@@ -24,6 +25,8 @@ import WithSlots from '../../test/with-slots.svelte';
 import PlainSection from '../../../../packages/svelte/src/test/plain-section.svelte';
 import DashboardPage from './dashboard.svelte';
 import FileDetail from './file-detail.svelte';
+import JobDetailPage from './job-detail.svelte';
+import JobsPage from './jobs.svelte';
 import ExtensionDetail from './extension-detail.svelte';
 import ModulePageScreen from './module-page.svelte';
 import PrinterDetail from './printer-detail.svelte';
@@ -375,6 +378,57 @@ const drawPrintDialog = async (registry: SlotRegistry): Promise<void> => {
   await page.getByRole('button', { name: 'Print bracket.bgcode' }).click();
 };
 
+// One printer that ran one print, for the Jobs listing and the print's page.
+const JOB_ID = '0199e3a4-5bb5-7aac-8a2c-9c3982e6373f';
+const jobRecord = {
+  device_id: 'a',
+  device_job_id: '412',
+  display_name: 'bracket.bgcode',
+  ended: '2026-09-01T09:00:00Z',
+  id: JOB_ID,
+  path: 'usb/bracket.bgcode',
+  progress: 100,
+  started: '2026-09-01T08:00:00Z',
+  state: 'FINISHED',
+  time_remaining_ms: 0,
+};
+const jobRoutes = {
+  'GET /api/v1/devices': json(200, {
+    items: [
+      {
+        id: 'a',
+        name: 'Printer a',
+        kind: 'printer',
+        model: 'MK4S',
+        labels: {},
+      },
+    ],
+  }),
+  'GET /api/v1/jobs': json(200, { items: [jobRecord], cursor: '' }),
+  [`GET /api/v1/jobs/${JOB_ID}`]: json(200, jobRecord),
+  'GET /api/v1/devices/a/transfers': json(200, { items: [] }),
+};
+
+// A job-column cell is in the module's column of each print's row.
+const drawJobs = async (registry: SlotRegistry): Promise<void> => {
+  localStorage.clear();
+
+  await render(WithSlots, {
+    props: { registry, screen: JobsPage, ctx: appContext(jobRoutes) },
+  });
+};
+
+// A job-section is under the details of a print's own page.
+const drawJobDetail = async (registry: SlotRegistry): Promise<void> => {
+  await render(WithSlots, {
+    props: {
+      registry,
+      screen: JobDetailPage,
+      ctx: appContext(jobRoutes, { params: { id: JOB_ID } }),
+    },
+  });
+};
+
 // One way to draw each screen with a registry. A screen added to the table
 // without a way to draw it here fails the typecheck, and a slot added to a
 // screen without an outlet fails the test below.
@@ -386,6 +440,8 @@ const DRAW: Record<Screen, (registry: SlotRegistry) => Promise<void>> = {
   printers: drawPrinters,
   storage: drawStorage,
   'print-dialog': drawPrintDialog,
+  jobs: drawJobs,
+  'job-detail': drawJobDetail,
 };
 
 afterEach(() => {
@@ -515,6 +571,36 @@ describe('every slot has an outlet on its screen', () => {
 // ADR-20261110-5np: the printers page hands each card's line the printer's
 // record from the fleet, so a line with a devices selector is on the resident
 // printer's card only.
+// ADR-20261123-wfw rule 3: the Jobs listing reads its module columns from the
+// declarations. Opened first, before any other screen read them, it reads the
+// listing itself, or it would draw no column and so no cell to load a bundle.
+describe('the Jobs listing opened first', () => {
+  it('reads the declarations and draws the module column', async () => {
+    localStorage.clear();
+    const registry = new SlotRegistry();
+    const discover = vi.fn(() => {
+      registry.declare(EVERY_SLOT_NAMESPACE, {
+        job_column: [{ id: 'used', title: 'Filament' }],
+      });
+
+      return Promise.resolve();
+    });
+    const loader = {
+      discover,
+      activate: () => Promise.resolve(),
+    } as unknown as ModuleLoader;
+
+    await render(WithSlots, {
+      props: { registry, loader, screen: JobsPage, ctx: appContext(jobRoutes) },
+    });
+
+    expect(discover).toHaveBeenCalled();
+    await expect
+      .element(page.getByRole('columnheader', { name: 'Filament' }))
+      .toBeVisible();
+  });
+});
+
 describe('a device-card line only for the printer the server runs on', () => {
   it('is drawn on the resident card and on no other', async () => {
     const registry = new SlotRegistry();

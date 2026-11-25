@@ -1,3 +1,4 @@
+import { createRawSnippet } from 'svelte';
 import { describe, expect, it, vi } from 'vitest';
 import { page } from 'vitest/browser';
 import { render } from 'vitest-browser-svelte';
@@ -88,6 +89,24 @@ describe('JobDetailScreen', () => {
     await expect
       .element(page.getByRole('link', { name: 'Jobs' }))
       .toHaveAttribute('href', '/jobs');
+  });
+
+  // The job-section slot: the host's snippet is drawn under the details, with
+  // the print's id, and a page whose host passes none draws no empty card.
+  it('draws the module sections under the details, and nothing without them', async () => {
+    const sections = createRawSnippet((jobId: () => string) => ({
+      render: () => `<p data-testid="section">${jobId()}</p>`,
+    }));
+    const { unmount } = await render(JobDetailScreen, {
+      props: props({ sections }),
+    });
+
+    await expect.element(page.getByTestId('section')).toHaveTextContent(JOB_ID);
+    await unmount();
+
+    await render(JobDetailScreen, { props: props() });
+    await expect.element(page.getByText('Finished')).toBeVisible();
+    expect(page.getByTestId('section').query()).toBeNull();
   });
 
   it('draws the state the print ended in, and the printer it ran on', async () => {

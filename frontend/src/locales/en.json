@@ -392,6 +392,8 @@
   "app.settings.extensions.visibility.kind.deviceSection": "Status section",
   "app.settings.extensions.visibility.kind.deviceTab": "Printer tab",
   "app.settings.extensions.visibility.kind.fileAction": "File action",
+  "app.settings.extensions.visibility.kind.jobColumn": "Jobs column",
+  "app.settings.extensions.visibility.kind.jobSection": "Print page section",
   "app.settings.extensions.visibility.kind.page": "Page",
   "app.settings.extensions.visibility.kind.printSection": "Print dialog section",
   "app.settings.extensions.visibility.label": "Show {name}",
