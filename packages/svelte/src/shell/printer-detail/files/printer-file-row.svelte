@@ -137,7 +137,7 @@
     </TableCell>
   {/if}
   <TableCell
-    class="hidden whitespace-nowrap @4xl/printer-file-listing:table-cell"
+    class="hidden whitespace-nowrap @3xl/printer-file-listing:table-cell"
   >
     {entry.modified === undefined ? '' : formatDateTime(entry.modified)}
   </TableCell>
