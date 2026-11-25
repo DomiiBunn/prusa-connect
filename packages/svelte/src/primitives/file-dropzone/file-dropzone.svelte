@@ -7,9 +7,21 @@
 
   `accept` is a hint. The browser does not enforce it, and a drop skips it
   altogether, so every file is checked again here.
+
+  With `page` set, a file dragged anywhere over the window lands here too, and
+  a sheet over the whole window says so while it is held. Only the zone
+  mounted last takes those drops, so two page zones never both receive one.
+  The sheet shows only during a file drag, so at rest the zone looks the same
+  either way. A drop while a dialog is open goes nowhere, as when disabled.
 -->
+<script lang="ts" module>
+  /** The page zones mounted now, oldest first. The last one owns the window. */
+  const pageZones: symbol[] = [];
+</script>
+
 <script lang="ts">
   import UploadIcon from '@lucide/svelte/icons/upload';
+  import { Portal } from 'bits-ui';
 
   import { t } from '../../i18n';
   import Button from '../button/button.svelte';
@@ -20,6 +32,7 @@
     accept,
     disabled = false,
     compact = false,
+    page = false,
     label,
     class: className,
     ...rest
@@ -29,11 +42,12 @@
 
   let input: HTMLInputElement | undefined = $state();
   let draggingOver = $state(false);
+  let overPage = $state(false);
   let refused = $state<string[]>([]);
 
   const zoneState = $derived.by(() => {
     if (disabled) return 'disabled';
-    if (draggingOver) return 'dragging-over';
+    if (draggingOver || overPage) return 'dragging-over';
     if (refused.length > 0) return 'rejected';
     return 'idle';
   });
@@ -52,6 +66,7 @@
   // change of language rewrites it (frontend-i18n.md rule 1).
   const invitation = $derived(t('primitives.dropzone.invitation'));
   const chooseWords = $derived(t('primitives.dropzone.choose'));
+  const releaseWords = $derived(t('primitives.dropzone.release'));
   const inputLabel = $derived.by(() => {
     if (label !== undefined) return label;
     return accept === undefined
@@ -120,6 +135,69 @@
     if (disabled) return;
     take(event.dataTransfer?.files);
   };
+
+  // Only a drag that carries files counts: dragging a link or a selection
+  // across the page draws no sheet.
+  const carriesFiles = (event: DragEvent): boolean =>
+    event.dataTransfer?.types.includes('Files') ?? false;
+
+  $effect(() => {
+    if (!page) return;
+    const me = Symbol('page-zone');
+    pageZones.push(me);
+    // dragenter and dragleave fire for every element the pointer crosses, so
+    // the sheet goes out only when as many leaves as enters have been seen.
+    let depth = 0;
+    // A drop while a dialog asks something would change what it asks about,
+    // or upload behind it. bits-ui marks every modal with `aria-modal`.
+    const held = (): boolean =>
+      disabled || document.querySelector('[aria-modal="true"]') !== null;
+    const owns = (event: DragEvent): boolean =>
+      pageZones.at(-1) === me && carriesFiles(event);
+
+    const enter = (event: DragEvent): void => {
+      if (!owns(event)) return;
+      depth += 1;
+      if (!held()) overPage = true;
+    };
+    const over = (event: DragEvent): void => {
+      // A zone or list of its own that took the drag already said so.
+      if (!owns(event) || event.defaultPrevented) return;
+      // Stopping the default everywhere also stops the browser opening a
+      // missed file in place of the app.
+      event.preventDefault();
+      if (event.dataTransfer)
+        event.dataTransfer.dropEffect = held() ? 'none' : 'copy';
+    };
+    const leave = (event: DragEvent): void => {
+      if (!owns(event)) return;
+      depth = Math.max(0, depth - 1);
+      if (depth === 0) overPage = false;
+    };
+    const land = (event: DragEvent): void => {
+      if (!owns(event)) return;
+      depth = 0;
+      overPage = false;
+      // The zone's own drop handler, or another target, took it already.
+      if (event.defaultPrevented) return;
+      event.preventDefault();
+      if (held()) return;
+      take(event.dataTransfer?.files);
+    };
+
+    window.addEventListener('dragenter', enter);
+    window.addEventListener('dragover', over);
+    window.addEventListener('dragleave', leave);
+    window.addEventListener('drop', land);
+    return () => {
+      window.removeEventListener('dragenter', enter);
+      window.removeEventListener('dragover', over);
+      window.removeEventListener('dragleave', leave);
+      window.removeEventListener('drop', land);
+      pageZones.splice(pageZones.indexOf(me), 1);
+      overPage = false;
+    };
+  });
 
   const pick = (): void => {
     if (!input) return;
@@ -194,3 +272,20 @@
     <p role="alert" class="text-sm text-destructive-text">{refusedLine}</p>
   {/if}
 </div>
+
+{#if overPage}
+  <!-- On body, so a containing ancestor (an @container card) cannot shrink the fixed sheet to its own box. The sheet lets every pointer event through, so the drag keeps landing on the page beneath and its enter and leave counts stay true. -->
+  <Portal>
+    <div
+      data-slot="file-dropzone-page"
+      aria-hidden="true"
+      class="pointer-events-none fixed inset-3 z-50 flex flex-col items-center justify-center gap-3 rounded-md border-2 border-dashed border-primary bg-background/80 text-center backdrop-blur-scrim"
+    >
+      <UploadIcon class="size-10 text-primary" />
+      <p class="text-lg font-medium">{releaseWords}</p>
+      {#if accept !== undefined}
+        <p class="text-sm text-muted-foreground">{acceptedLine}</p>
+      {/if}
+    </div>
+  </Portal>
+{/if}

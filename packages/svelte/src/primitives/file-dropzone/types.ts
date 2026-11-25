@@ -25,6 +25,13 @@ export interface FileDropzoneProps extends Omit<
    */
   compact?: boolean;
   /**
+   * Takes a file dropped anywhere on the window, not only on the zone, and
+   * covers the window with a sheet while files are dragged over it. For a
+   * screen whose main job is taking files. Of several page zones mounted at
+   * once, the one mounted last takes the drop.
+   */
+  page?: boolean;
+  /**
    * What the zone takes, in the caller's words: "Signed update bundle". It
    * names the file input in place of the generic "Upload files", formats
    * included, so a caller that sets `accept` on a compact zone says them here.

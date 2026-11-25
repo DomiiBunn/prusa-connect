@@ -41,6 +41,7 @@
   "primitives.dropzone.label": "Upload files",
   "primitives.dropzone.labelAccepting": "Upload files ({accept})",
   "primitives.dropzone.rejected": "{count, plural, one {{name} was not accepted.} other {# files were not accepted.}}",
+  "primitives.dropzone.release": "Drop files to upload",
   "primitives.facetPopover.options": "{label} options",
   "primitives.faultAlert.report": "Report a problem",
   "primitives.faultAlert.traceId": "Trace ID",

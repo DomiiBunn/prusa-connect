@@ -1,3 +1,4 @@
+import { flushSync } from 'svelte';
 import { describe, expect, it, vi } from 'vitest';
 import { page, userEvent } from 'vitest/browser';
 import { render } from 'vitest-browser-svelte';
@@ -18,7 +19,7 @@ const gcode = (name: string): File =>
  */
 const drag = (
   target: Element,
-  type: 'dragover' | 'dragleave' | 'drop',
+  type: 'dragenter' | 'dragover' | 'dragleave' | 'drop',
   files: File[] = [],
 ): void => {
   const dataTransfer = new DataTransfer();
@@ -186,5 +187,170 @@ describe('FileDropzone', () => {
     expect(zone.className).not.toContain('flex-wrap');
     expect(container.textContent).toContain('Accepted: .gcode, .bgcode');
     await expectNoViolations(container);
+  });
+
+  describe('over the whole page', () => {
+    /** Somewhere on the page that is not the zone. */
+    const elsewhere = (): HTMLElement => {
+      const spot = document.createElement('div');
+      document.body.append(spot);
+      return spot;
+    };
+
+    const sheet = (): Element | null =>
+      document.querySelector('[data-slot="file-dropzone-page"]');
+
+    it('takes a file dropped outside the zone, and covers the page while it is held', async () => {
+      const batches: File[][] = [];
+      await render(FileDropzone, {
+        props: {
+          onFiles: (files: File[]) => batches.push(files),
+          accept: '.gcode',
+          page: true,
+        },
+      });
+      const spot = elsewhere();
+
+      drag(spot, 'dragenter', [gcode('benchy.gcode')]);
+      await expect.poll(sheet).not.toBeNull();
+
+      drag(spot, 'drop', [gcode('benchy.gcode')]);
+      expect(namesOf(batches)).toEqual([['benchy.gcode']]);
+      await expect.poll(sheet).toBeNull();
+      spot.remove();
+    });
+
+    it('lifts the sheet once the drag has left every element it entered', async () => {
+      await render(FileDropzone, { props: { onFiles: vi.fn(), page: true } });
+      const outer = elsewhere();
+      const inner = document.createElement('span');
+      outer.append(inner);
+
+      drag(outer, 'dragenter', [gcode('a.gcode')]);
+      drag(inner, 'dragenter', [gcode('a.gcode')]);
+      drag(outer, 'dragleave', [gcode('a.gcode')]);
+      await expect.poll(sheet).not.toBeNull();
+
+      drag(inner, 'dragleave', [gcode('a.gcode')]);
+      await expect.poll(sheet).toBeNull();
+      outer.remove();
+    });
+
+    it('reports a drop on the zone itself once', async () => {
+      const batches: File[][] = [];
+      const { container } = await render(FileDropzone, {
+        props: { onFiles: (files: File[]) => batches.push(files), page: true },
+      });
+
+      drag(zoneOf(container), 'drop', [gcode('benchy.gcode')]);
+
+      expect(namesOf(batches)).toEqual([['benchy.gcode']]);
+    });
+
+    it('leaves a drop outside alone without `page`', async () => {
+      const onFiles = vi.fn();
+      await render(FileDropzone, { props: { onFiles } });
+      const spot = elsewhere();
+
+      drag(spot, 'dragenter', [gcode('benchy.gcode')]);
+      drag(spot, 'drop', [gcode('benchy.gcode')]);
+
+      expect(onFiles).not.toHaveBeenCalled();
+      expect(sheet()).toBeNull();
+      spot.remove();
+    });
+
+    it('takes nothing and draws no sheet while it is disabled', async () => {
+      const onFiles = vi.fn();
+      await render(FileDropzone, {
+        props: { onFiles, page: true, disabled: true },
+      });
+      const spot = elsewhere();
+
+      drag(spot, 'dragenter', [gcode('benchy.gcode')]);
+      flushSync();
+      expect(sheet()).toBeNull();
+      drag(spot, 'drop', [gcode('benchy.gcode')]);
+
+      expect(onFiles).not.toHaveBeenCalled();
+      spot.remove();
+    });
+
+    it('takes nothing and draws no sheet while a dialog is open', async () => {
+      const onFiles = vi.fn();
+      await render(FileDropzone, { props: { onFiles, page: true } });
+      const dialog = elsewhere();
+      dialog.setAttribute('aria-modal', 'true');
+
+      drag(dialog, 'dragenter', [gcode('benchy.gcode')]);
+      flushSync();
+      expect(sheet()).toBeNull();
+      drag(dialog, 'drop', [gcode('benchy.gcode')]);
+
+      expect(onFiles).not.toHaveBeenCalled();
+      dialog.remove();
+    });
+
+    it('ignores a drag that carries no files', async () => {
+      await render(FileDropzone, { props: { onFiles: vi.fn(), page: true } });
+      const spot = elsewhere();
+      const text = new DataTransfer();
+      text.setData('text/plain', 'hello');
+      const over = new DragEvent('dragover', {
+        bubbles: true,
+        cancelable: true,
+        dataTransfer: text,
+      });
+      spot.dispatchEvent(
+        new DragEvent('dragenter', { bubbles: true, dataTransfer: text }),
+      );
+      spot.dispatchEvent(over);
+      flushSync();
+
+      expect(over.defaultPrevented).toBe(false);
+      expect(sheet()).toBeNull();
+      spot.remove();
+    });
+
+    it('hands a page drop only to the zone mounted last', async () => {
+      const first = vi.fn();
+      const second = vi.fn();
+      await render(FileDropzone, { props: { onFiles: first, page: true } });
+      const later = await render(FileDropzone, {
+        props: { onFiles: second, page: true },
+      });
+      const spot = elsewhere();
+
+      drag(spot, 'drop', [gcode('benchy.gcode')]);
+      expect(first).not.toHaveBeenCalled();
+      expect(second).toHaveBeenCalledTimes(1);
+
+      // Once the later zone goes, the earlier one owns the page again.
+      await later.unmount();
+      drag(spot, 'drop', [gcode('benchy.gcode')]);
+      expect(first).toHaveBeenCalledTimes(1);
+      spot.remove();
+    });
+
+    it('takes back every window listener it added when it unmounts', async () => {
+      const added = vi.spyOn(window, 'addEventListener');
+      const removed = vi.spyOn(window, 'removeEventListener');
+      const drags = (spy: typeof added): number =>
+        spy.mock.calls.filter(
+          ([type]) => type.startsWith('drag') || type === 'drop',
+        ).length;
+
+      for (let round = 0; round < 3; round += 1) {
+        const mounted = await render(FileDropzone, {
+          props: { onFiles: vi.fn(), page: true },
+        });
+        await mounted.unmount();
+      }
+
+      expect(drags(added)).toBe(12);
+      expect(drags(removed)).toBe(drags(added));
+      added.mockRestore();
+      removed.mockRestore();
+    });
   });
 });
