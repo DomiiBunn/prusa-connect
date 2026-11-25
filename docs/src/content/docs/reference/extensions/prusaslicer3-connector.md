@@ -29,7 +29,7 @@ Lets PrusaSlicer 3 in offline mode sign in to this server, list its printers and
 
 | | |
 |---|---|
-| version | 0.1.0 |
+| version | 0.1.1 |
 | licence | OCL v1.1 + Micro v1 + NoSaaS v1 + SWAtt v1 |
 | module path | `github.com/prusa3d/prusaslicer3-connector` |
 | namespace | `com.github.aux.prusa3d.prusaslicer3-connector` |
@@ -41,6 +41,7 @@ Lets PrusaSlicer 3 in offline mode sign in to this server, list its printers and
 ## What it adds {#what-it-adds}
 
 - **Print from PrusaSlicer**: a page of its own, with an entry in the sidebar
+- **How to**: a tab on the module's page under Settings, Extensions
 - **Set as current in PrusaSlicer**: a control under the header of each printer's page
 - **Set as current in PrusaSlicer**: a small control on each printer in the listing
 

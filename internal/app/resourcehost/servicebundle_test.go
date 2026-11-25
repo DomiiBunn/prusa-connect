@@ -165,3 +165,37 @@ func TestAModuleWhoseBundleChangedNeverServes(t *testing.T) {
 	require.NoError(t, answered.Body.Close())
 	require.NotEqual(t, http.StatusOK, answered.StatusCode, "a file of an unverified bundle was served")
 }
+
+// The surface carries the module's title and summary from its declaration,
+// for the page a browser with no credential reads at the module's address.
+func TestTheSurfaceCarriesTheModulesTitleAndSummary(t *testing.T) {
+	t.Parallel()
+
+	w := newWired(t)
+	module := installAs(t, pluginName)
+	instance := theServiceSink(t)
+
+	w.writeFile(fmt.Sprintf(`
+resources:
+  sink:
+    example:
+      type: %s
+      runtime: service
+      enabled: true
+      module:
+        version: 1.0.0
+        title: Planner
+        summary: Plans prints for every printer.
+      service:
+        path: %s
+        checksum: %s
+        contract_major: 1
+`, mountedNamespace+"/"+pluginName, filepath.ToSlash(module.dir), module.checksum))
+	require.NoError(t, w.store.Reload(t.Context()))
+	w.waitReady(instance)
+
+	surface, claimed := w.host.Module(mountedNamespace)
+	require.True(t, claimed)
+	require.Equal(t, "Planner", surface.Title)
+	require.Equal(t, "Plans prints for every printer.", surface.Summary)
+}

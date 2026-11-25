@@ -40,5 +40,13 @@
   "state.PRINTING": "Printing",
   "state.READY": "Ready",
   "state.STOPPED": "Stopped",
-  "state.UNKNOWN": "Unknown"
+  "state.UNKNOWN": "Unknown",
+  "howTo.title": "How to",
+  "howTo.perServer": "PrusaSlicer 3 Connector is set up once, in PrusaSlicer, for the whole server.",
+  "howTo.steps.services": "In PrusaSlicer 3, open Preferences, then Services. Set the mode to offline and paste this server's address.",
+  "howTo.steps.signIn": "Sign in. PrusaSlicer shows a code, and you approve it on this server's pairing page.",
+  "howTo.steps.print": "The Connect tab then lists the printers you may see. Send a print from its print dialog.",
+  "howTo.steps.more": "The sign-in is listed under Settings, API credentials, where you can revoke it.",
+  "howTo.limits": "The largest upload is set for the whole server, on the Uploads tab.",
+  "howTo.address": "Server address"
 }

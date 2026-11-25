@@ -9,7 +9,7 @@ title: PrusaSlicer 2 Connector
 summary: Lets PrusaSlicer 2.4 and later send a print to each printer of this server as it sends one to a printer with PrusaLink.
 codeowner: Prusa Research
 kind: sink
-version: 0.1.1
+version: 0.1.2
 license: OCL v1.1 + Micro v1 + NoSaaS v1 + SWAtt v1
 contract_major: 1
 openapi: openapi.json
@@ -84,3 +84,8 @@ ui:
     device_info_section:
       - id: prusalink
         title: PrusaSlicer 2 Connector
+    # How to set the connector up, on its page under Settings, Extensions.
+    # It is set up on each printer, which that page does not say.
+    settings:
+      - id: how-to
+        title: How to

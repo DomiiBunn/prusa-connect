@@ -104,10 +104,33 @@
       : t('app.settings.extensions.version.installed', { version });
   });
 
-  const panes = $derived(
+  // The panes the registry knows once the app has read the manifests, and
+  // until then the ones the instance's own manifest declares, so the page
+  // opens on the module's first pane rather than moving to it a moment later.
+  // Once the manifests are read the registry alone decides: it leaves out a
+  // module it refused and a pane the module hides, which would draw nothing.
+  const declaredPanes = $derived(
     (slots ? moduleTabs(slots.registry, 'settings') : []).filter((pane) =>
       pane.id.startsWith(`${namespace}.`),
     ),
+  );
+  const manifestPanes = $derived.by(() => {
+    if (slots?.loader?.discovered === true) return [];
+    if (slots?.registry.refused(namespace) === true) return [];
+    const instance = row?.instance;
+    if (instance === undefined) return [];
+    const hidden = hiddenEntries(instance);
+
+    return (instance.ui?.contributes.settings ?? [])
+      .filter((pane) => !hidden.includes(`settings/${pane.id}`))
+      .map((pane) => ({
+        id: `${namespace}.${pane.id}`,
+        label: pane.title,
+        isolated: false,
+      }));
+  });
+  const panes = $derived(
+    declaredPanes.length > 0 ? declaredPanes : manifestPanes,
   );
   const options = $derived(row?.instance?.module?.options ?? []);
   const askedPorts = $derived(row?.instance?.module?.asked?.listen ?? []);
@@ -120,6 +143,9 @@
   const contributions = $derived(contributionsOf(row?.instance));
   // Only a service module has a memory budget.
   const memory = $derived(row?.instance?.status.memory);
+  // The settings the module declares come first, then the module's own panes,
+  // such as how to set it up, and the page opens on the first of them. The
+  // server's other tabs about the module follow.
   const tabs = $derived([
     ...(options.length > 0
       ? [
@@ -130,6 +156,7 @@
           },
         ]
       : []),
+    ...panes.map((pane) => ({ ...pane, panel: panePanel })),
     ...(askedPorts.length > 0
       ? [
           {
@@ -162,7 +189,6 @@
             panel: logPanel,
           },
         ]),
-    ...panes.map((pane) => ({ ...pane, panel: panePanel })),
     ...(contributions.length > 0
       ? [
           {

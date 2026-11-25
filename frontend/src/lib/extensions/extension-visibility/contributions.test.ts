@@ -20,6 +20,11 @@ const NOT_OFFERED: readonly string[] = [
   'device_upload_action',
 ];
 
+// The slots the core never lets an operator hide: dashboard cards are not in
+// the slot table here, and ADR-20261125-kyn rules 1 and 2 add settings tabs
+// and Printer tab cards.
+const NEVER_HIDDEN: readonly string[] = ['settings', 'device_info_section'];
+
 describe('the slots an operator may hide an entry of', () => {
   it('offers every section and action slot, or names it as not offered yet', () => {
     const keys = Object.values(SLOT_KEYS);
@@ -36,8 +41,27 @@ describe('the slots an operator may hide an entry of', () => {
     );
 
     for (const key of keys) {
-      if (NOT_OFFERED.includes(key)) continue;
+      if (NOT_OFFERED.includes(key) || NEVER_HIDDEN.includes(key)) continue;
       expect(offered, `${key} cannot be hidden`).toContain(key);
     }
+  });
+
+  it('lists no settings tab, no Printer tab card and no page kept out of the sidebar', () => {
+    const instance = {
+      ui: {
+        contributes: {
+          pages: [
+            { path: 'shown', title: 'Shown', hidden: false },
+            { path: 'dialog', title: 'Dialog', hidden: true },
+          ],
+          settings: [{ id: 'how-to', title: 'How to' }],
+          device_info_section: [{ id: 'card', title: 'Card' }],
+        },
+      },
+    } as unknown as ResourceInstance;
+
+    expect(contributionsOf(instance).map((row) => row.key)).toEqual([
+      'pages/shown',
+    ]);
   });
 });

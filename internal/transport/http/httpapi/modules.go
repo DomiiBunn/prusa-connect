@@ -89,6 +89,11 @@ type ModuleSurface struct {
 	// limit, and every other module request to the document bound
 	// (ADR-20261120-xys rule 6).
 	Staged []manifest.StagedRoute
+	// Title and Summary are the module's own, from its manifest. A browser
+	// that opens the module's address with no credential reads them on the
+	// page the core answers instead of the problem document.
+	Title   string
+	Summary string
 }
 
 // ModulePlane answers which module claims one namespace. It is the seam between
@@ -242,6 +247,12 @@ func (s *Server) allowModule(
 		refusal := identityFault(err)
 
 		logRefusal(r.Context(), s.logger, r.URL.Path, err)
+
+		if refusal.Status() == http.StatusUnauthorized && wantsAddressPage(r) {
+			writeModuleAddressPage(w, r, surface, refusal.Status())
+
+			return Caller{}, false
+		}
 
 		writeProblem(w, r, refusal)
 

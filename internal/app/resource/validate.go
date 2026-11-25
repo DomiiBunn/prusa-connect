@@ -40,19 +40,47 @@ const (
 )
 
 // hiddenSlotKeys are the slot keys an operator may hide an entry of: every
-// SlotName.Key in sdk/manifest except cards. A person places a card on a
-// dashboard and removes it there, so the operator has nothing to hide.
+// SlotName.Key in sdk/manifest except cards, settings and device_info_section.
+// A person places a card on a dashboard and removes it there, so the operator
+// has nothing to hide. A settings tab and a card on a printer's Printer tab are
+// where the module is set up, so they are never hidden: an operator who does
+// not want them removes the module.
 //
 //nolint:gochecknoglobals // derived once from the closed slot table, read and never written.
 var hiddenSlotKeys = func() []string {
 	var keys []string
 	for _, slot := range manifest.Slots() {
-		if slot.Name != manifest.SlotDashboardCard {
+		if slot.Name != manifest.SlotDashboardCard && slot.Name != manifest.SlotSettings &&
+			slot.Name != manifest.SlotDeviceInfoSection {
 			keys = append(keys, slot.Name.Key())
 		}
 	}
 	return keys
 }()
+
+// shownSlotKeys are the slot keys whose entries are always shown. An entry of
+// them in hidden contributions is dropped, not refused, so a declaration that
+// names one still saves and the entry hides nothing.
+//
+//nolint:gochecknoglobals // a fixed list, read and never written.
+var shownSlotKeys = []string{manifest.SlotSettings.Key(), manifest.SlotDeviceInfoSection.Key()}
+
+// keptHidden is hidden without the entries of shownSlotKeys.
+func keptHidden(hidden []string) []string {
+	if hidden == nil {
+		return nil
+	}
+
+	kept := make([]string, 0, len(hidden))
+	for _, entry := range hidden {
+		key, _, _ := strings.Cut(entry, "/")
+		if !slices.Contains(shownSlotKeys, key) {
+			kept = append(kept, entry)
+		}
+	}
+
+	return kept
+}
 
 // hiddenEntry is a slot key, a slash, and an identity with no whitespace. The
 // manifest of the module is not read, so an entry can be hidden before a
@@ -178,6 +206,8 @@ func (s *Store) validate(
 	if err := s.knownType(instance, desired.Type, exists); err != nil {
 		return Spec{}, err
 	}
+
+	desired.HiddenContributions = keptHidden(desired.HiddenContributions)
 
 	if err := validHidden(desired.HiddenContributions); err != nil {
 		return Spec{}, err

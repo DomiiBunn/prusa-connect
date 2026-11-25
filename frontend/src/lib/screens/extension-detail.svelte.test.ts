@@ -297,6 +297,80 @@ describe('the page of one extension', () => {
     await expect.element(page.getByTestId('plain-pane')).toBeInTheDocument();
   });
 
+  it('opens on a pane of the module, the first of its tabs', async () => {
+    const registry = new SlotRegistry();
+    registry.declare(NAMESPACE, contributes);
+    registry.registerSection(NAMESPACE, 'settings', 'spools', PlainPane);
+
+    await open(registry, [instance], { namespace: NAMESPACE });
+
+    await expect.element(page.getByTestId('plain-pane')).toBeInTheDocument();
+    const tabs = page.getByRole('tab').elements();
+    expect(tabs[0]?.textContent).toContain('Spool shelves');
+  });
+
+  it('opens on the pane its manifest declares before the app reads the manifests', async () => {
+    await open(new SlotRegistry(), [instance], { namespace: NAMESPACE });
+
+    const tabs = page.getByRole('tab').elements();
+    expect(tabs[0]?.textContent).toContain('Spool shelves');
+    expect(tabs[0]?.getAttribute('aria-selected')).toBe('true');
+  });
+
+  it('opens on Settings before its panes for a module that declares settings', async () => {
+    const registry = new SlotRegistry();
+    registry.declare(NAMESPACE, contributes);
+    registry.registerSection(NAMESPACE, 'settings', 'spools', PlainPane);
+
+    await open(
+      registry,
+      [
+        {
+          ...instance,
+          config: { shelf: 5 },
+          module: {
+            ...instance.module,
+            options: [{ key: 'shelf', type: 'int', default: 1, doc: 'Shelf' }],
+          },
+        },
+      ],
+      { namespace: NAMESPACE },
+    );
+
+    await expect
+      .element(page.getByRole('tab', { name: 'Spool shelves' }))
+      .toBeVisible();
+    const tabs = page.getByRole('tab').elements();
+    expect(tabs[0]?.textContent).toContain('Settings');
+    expect(tabs[0]?.getAttribute('aria-selected')).toBe('true');
+    expect(tabs[1]?.textContent).toContain('Spool shelves');
+  });
+
+  it('opens on no pane of a module the app refused', async () => {
+    const registry = new SlotRegistry();
+    registry.refuse({ namespace: NAMESPACE, reason: 'threw', detail: 'boom' });
+
+    await open(registry, [instance], { namespace: NAMESPACE });
+
+    await expect.element(page.getByRole('tab').first()).toBeVisible();
+    expect(
+      page.getByRole('tab', { name: 'Spool shelves' }).elements(),
+    ).toHaveLength(0);
+  });
+
+  it('opens on no pane the module hides itself', async () => {
+    await open(
+      new SlotRegistry(),
+      [{ ...instance, ui: { ...instance.ui, hidden: ['settings/spools'] } }],
+      { namespace: NAMESPACE },
+    );
+
+    await expect.element(page.getByRole('tab').first()).toBeVisible();
+    expect(
+      page.getByRole('tab', { name: 'Spool shelves' }).elements(),
+    ).toHaveLength(0);
+  });
+
   it('has a Dependencies tab for an installed module that depends on nothing', async () => {
     await open(new SlotRegistry(), [instance], { namespace: NAMESPACE });
 

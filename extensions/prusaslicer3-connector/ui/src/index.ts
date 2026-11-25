@@ -15,6 +15,7 @@ import { defineModule } from '@prusa/connect-ui/slots';
 import { apiOn } from './api';
 import { holdSession } from './session';
 import {
+  HowTo,
   SelectPrinterRoute,
   SetAsCurrentHeader,
   SetAsCurrentRow,
@@ -25,6 +26,9 @@ export default defineModule((host) => {
   holdSession({ host, api: apiOn(host) });
 
   host.register.page('select-printer', SelectPrinterRoute);
+  // Where the connector is set up, on its own page under Settings,
+  // Extensions.
+  host.register.settings('how-to', HowTo);
 
   if (slicer.available) {
     host.register.deviceHeader('set-as-current', SetAsCurrentHeader);

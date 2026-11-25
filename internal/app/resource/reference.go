@@ -27,9 +27,9 @@ var Keys = map[string]config.Key{
 		Default: "`true`",
 	},
 	"resources.<kind>.<name>.hidden_contributions": {
-		Doc: "The places of the module's UI hidden from every viewer, as `<slot>/<id>`, such as " +
-			"`file_action/plan` or `pages/<path>`. A hidden page still opens by link. " +
-			"A dashboard card cannot be hidden.",
+		Doc: "The places of the module's UI hidden from every viewer, as `<slot>/<id>`. " +
+			"A hidden page still opens by link. " +
+			"Dashboard cards, settings tabs and Printer tab cards cannot be hidden.",
 		Default: "none",
 	},
 	"resources.<kind>.<name>.required": {

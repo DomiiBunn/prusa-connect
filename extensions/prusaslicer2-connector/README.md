@@ -7,16 +7,22 @@ the job of [prusaslicer3-connector](../prusaslicer3-connector/README.md). Here e
 printer of this server gets an address of its own, and PrusaSlicer talks to
 that address as if it were the printer.
 
+It is set up for each printer, not for the server. Each printer has its own
+address, and its own PrusaSlicer 2 Connector card with the steps, the API key
+and Save to storage. The card is on the printer's page, on its Printer tab,
+under the Connection card. The largest upload is set for the whole server, on
+the extension's Uploads tab under Settings, Extensions.
+
 ## Setting it up in PrusaSlicer
 
 1. Open the printer's page on this server. On its Printer tab, under the
    Connection card, the PrusaSlicer 2 Connector card shows the address and the button
    **Create an API key**.
 2. In PrusaSlicer, click **Add physical printer** next to the printer profile.
-3. Set **Host type** to PrusaLink and paste the address into
+3. Set **Host Type** to PrusaLink and paste the address into
    **Hostname, IP or URL**. It looks like
    `http://192.168.1.20:8080/api/v1/modules/<namespace>/printers/<id>/`.
-4. Set **Authorization type** to API key and paste the key.
+4. Set **Authorization Type** to API key and paste the key.
 5. Click **Test**. **Upload and Print** then sends the file to the printer
    and starts it, and **Upload** puts it on the printer without starting it.
 
@@ -28,6 +34,10 @@ revokes it.
 
 PrusaSlicer's **Browse** button looks only for OctoPrint on the network, so it
 finds no printer of this server. The person pastes the address.
+
+PrusaSlicer's **Physical printer** tab opens the address in a web view and
+sends no API key with it. The core answers that tab with a short page that
+names this extension, with its summary.
 
 ## The requests
 

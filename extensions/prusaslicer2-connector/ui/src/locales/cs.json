@@ -1,5 +1,5 @@
 {
-  "prusalink.address": "Název hostitele, IP adresa nebo URL",
+  "prusalink.address": "Název serveru, IP nebo URL",
   "prusalink.key": "API klíč",
   "prusalink.create": "Vytvořit API klíč",
   "prusalink.creating": "Vytvářím API klíč",
@@ -8,8 +8,8 @@
   "prusalink.plainHttp": "Tahle adresa je obyčejné HTTP, takže klíč jde po síti nešifrovaně. Pokud má server HTTPS adresu, vložte do PrusaSliceru raději tu.",
   "prusalink.steps.title": "Jak nastavit PrusaSlicer",
   "prusalink.steps.add": "Použijte PrusaSlicer 2.4 nebo novější. Vedle profilu tiskárny klikněte na Přidat fyzickou tiskárnu.",
-  "prusalink.steps.host": "Typ hostitele nastavte na PrusaLink a adresu vložte do pole Název hostitele, IP adresa nebo URL.",
-  "prusalink.steps.key": "Typ autorizace nastavte na API klíč a vložte API klíč.",
+  "prusalink.steps.host": "Typ tiskového serveru nastavte na PrusaLink a adresu vložte do pole Název serveru, IP nebo URL.",
+  "prusalink.steps.key": "Typ oprávnění nastavte na API klíč a vložte API klíč.",
   "prusalink.steps.test": "Klikněte na Test.",
   "prusalink.keep.title": "Nahrávání z PrusaSliceru",
   "prusalink.seen.never": "PrusaSlicer se zatím nepřipojil",
@@ -20,5 +20,13 @@
   "prusalink.seen.connected": "PrusaSlicer připojen",
   "prusalink.seen.lastSeen": "naposledy {ago}",
   "prusalink.keep.scope": "Platí pro každé nahrání z PrusaSliceru na tuto tiskárnu, ať ho posílá kdokoli.",
-  "prusalink.keep.readOnlyNobody": "Nikdo to nemůže změnit, dokud administrátor rozšíření nepovolí kontrolu operate."
+  "prusalink.keep.readOnlyNobody": "Nikdo to nemůže změnit, dokud administrátor rozšíření nepovolí kontrolu operate.",
+  "howTo.title": "Návod",
+  "howTo.perPrinter": "PrusaSlicer 2 Connector se nastavuje pro každou tiskárnu zvlášť, ne pro server. Každá tiskárna má svou adresu a svou kartu.",
+  "howTo.steps.open": "Otevřete stránku tiskárny a její záložku Tiskárna. Karta PrusaSlicer 2 Connector je pod kartou Připojení.",
+  "howTo.steps.copy": "Na té kartě zkopírujte adresu a vytvořte API klíč.",
+  "howTo.steps.slicer": "V PrusaSliceru 2.4 nebo novějším klikněte na Přidat fyzickou tiskárnu. Typ tiskového serveru nastavte na PrusaLink a vložte adresu, typ oprávnění nastavte na API klíč a vložte klíč, pak klikněte na Test.",
+  "howTo.steps.more": "Stejně postupujte u každé tiskárny. Jeden klíč funguje pro všechny tiskárny, které smíte ovládat.",
+  "howTo.keep": "Přepínač Uložit do úložiště je na stejné kartě. Je to jedno nastavení pro tu tiskárnu a platí pro každé nahrání z PrusaSliceru na ni, ať ho posílá kdokoli.",
+  "howTo.limits": "Největší nahrávaný soubor se nastavuje pro celý server, na záložce Nahrávání."
 }

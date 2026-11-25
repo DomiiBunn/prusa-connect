@@ -3,6 +3,12 @@
 What changed in this module, newest first. The top heading is the version
 `module.yaml` declares and the version this process reports to the host.
 
+## 0.1.2 - 2026-11-25
+
+### Added
+
+- A How to tab on the extension's page under Settings, Extensions says it is set up on each printer, and where.
+
 ## 0.1.1 - 2026-11-24
 
 ### Changed

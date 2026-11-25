@@ -11,6 +11,8 @@ rewrite:
 
 PrusaSlicer 2 Connector lets PrusaSlicer 2.4 and later send a print to a printer of this server. PrusaSlicer 2 knows no Prusa Connect server, but it sends a print to a printer with PrusaLink. This extension answers the PrusaLink requests for each printer of this server, at an address of its own.
 
+It is set up for each printer, not for the server. Each printer has its own address and its own PrusaSlicer 2 Connector card, with the steps, the API key and Save to storage. The largest upload is set for the whole server, on the extension's Uploads tab under Settings, Extensions.
+
 A person opens the printer's page in the web app. On its Printer tab, under the Connection card, the PrusaSlicer 2 Connector card shows the printer's address and makes an API key. It also says when PrusaSlicer last reached the printer. In PrusaSlicer the person adds a physical printer, sets the host type to PrusaLink, and pastes the address and the key. The key is an [API credential](../../scoped-credentials-and-app-pairing.md) of this server with the operate scope, and PrusaSlicer sends it in the `X-Api-Key` header.
 
 Upload and Print sends the file to the printer and starts it. Upload puts the file on the printer's USB drive and starts nothing, as PrusaLink does. Save to storage is one setting for the printer on the same card. With it on, each upload is also saved in a storage and folder of this server, as the person whose key sent it.
@@ -29,7 +31,7 @@ Lets PrusaSlicer 2.4 and later send a print to each printer of this server as it
 
 | | |
 |---|---|
-| version | 0.1.1 |
+| version | 0.1.2 |
 | licence | OCL v1.1 + Micro v1 + NoSaaS v1 + SWAtt v1 |
 | module path | `github.com/prusa3d/prusaslicer2-connector` |
 | namespace | `com.github.aux.prusa3d.prusaslicer2-connector` |
@@ -40,6 +42,7 @@ Lets PrusaSlicer 2.4 and later send a print to each printer of this server as it
 
 ## What it adds {#what-it-adds}
 
+- **How to**: a tab on the module's page under Settings, Extensions
 - **PrusaSlicer 2 Connector**: a card under the connection on each printer's Printer tab
 
 ## What it needs {#what-it-needs}

@@ -475,6 +475,10 @@ func (h *Host) surfaceOf(instance ref.Ref, running *instance) (httpapi.ModuleSur
 
 	_, surface.Staged = h.stagedOf(running.declaration)
 
+	if module := running.declaration.Spec.Module; module != nil {
+		surface.Title, surface.Summary = module.Title, module.Summary
+	}
+
 	return surface, true
 }
 

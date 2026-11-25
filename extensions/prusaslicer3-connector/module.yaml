@@ -9,7 +9,7 @@ title: PrusaSlicer 3 Connector
 summary: Lets PrusaSlicer 3 in offline mode sign in to this server, list its printers and send a print, as it does with Prusa Connect.
 codeowner: Prusa Research
 kind: sink
-version: 0.1.0
+version: 0.1.1
 license: OCL v1.1 + Micro v1 + NoSaaS v1 + SWAtt v1
 contract_major: 1
 openapi: openapi.json
@@ -75,6 +75,11 @@ ui:
         title: Print from PrusaSlicer
         icon: printer
         hidden: true
+    # How to set the connector up, on its page under Settings, Extensions.
+    # It is set up once in PrusaSlicer, which that page does not say.
+    settings:
+      - id: how-to
+        title: How to
     # "Set as current" on a printer, as Prusa Connect shows it inside
     # PrusaSlicer: under the printer page's header, and on every printer of
     # the listing. The bundle registers both only when PrusaSlicer shows the

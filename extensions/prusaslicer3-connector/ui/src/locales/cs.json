@@ -40,5 +40,13 @@
   "state.PRINTING": "Tiskne",
   "state.READY": "Připravena",
   "state.STOPPED": "Zastaveno",
-  "state.UNKNOWN": "Neznámý"
+  "state.UNKNOWN": "Neznámý",
+  "howTo.title": "Návod",
+  "howTo.perServer": "PrusaSlicer 3 Connector se nastavuje jednou, v PrusaSliceru, pro celý server.",
+  "howTo.steps.services": "V PrusaSliceru 3 otevřete Nastavení a pak Služby. Nastavte režim offline a vložte adresu tohoto serveru.",
+  "howTo.steps.signIn": "Přihlaste se. PrusaSlicer ukáže kód a ten schválíte na stránce párování tohoto serveru.",
+  "howTo.steps.print": "Záložka Connect pak ukáže tiskárny, které smíte vidět. Tisk pošlete z jejího tiskového dialogu.",
+  "howTo.steps.more": "Přihlášení najdete v Nastavení, Přístup k API, kde ho můžete zrušit.",
+  "howTo.limits": "Největší nahrávaný soubor se nastavuje pro celý server, na záložce Nahrávání.",
+  "howTo.address": "Adresa serveru"
 }

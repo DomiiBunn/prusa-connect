@@ -1936,6 +1936,11 @@ starts when the operator approved none of its calls, and each call answers
 
 A `GET` needs `view_resource` on the instance and everything else needs `operate_resource`, decided by the same graph as every other path under `/api/v1`. A caller the graph gives nothing is refused with `core.auth/ACCESS_DENIED` before the module runs. On a fresh server the one subject is administrator of `org:local` and holds both.
 
+A browser that opens your module's address with no credential gets a page
+from the core instead of the 401 problem document. The page shows your
+manifest's `title` and `summary`, and your module does not run. The rules are
+[ADR-20261125-eeh](../../../decisions/20261125-eeh-a-browser-with-no-credential-gets-a-page-at-a-module-address.md).
+
 ### A route anybody may call
 
 Some requests come before a person has a credential, such as a device that

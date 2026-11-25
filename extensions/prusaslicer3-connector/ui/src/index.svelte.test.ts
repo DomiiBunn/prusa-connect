@@ -30,6 +30,7 @@ const registered = async (): Promise<string[]> => {
     client: {},
     register: {
       page: record('page'),
+      settings: record('settings'),
       deviceHeader: record('deviceHeader'),
       deviceRow: record('deviceRow'),
     },
@@ -39,8 +40,11 @@ const registered = async (): Promise<string[]> => {
 };
 
 describe('the module setup', () => {
-  it('registers the page and no printer action in a browser', async () => {
-    expect(await registered()).toEqual(['page:select-printer']);
+  it('registers the page and the How to tab and no printer action in a browser', async () => {
+    expect(await registered()).toEqual([
+      'page:select-printer',
+      'settings:how-to',
+    ]);
   });
 
   it('registers Set as current on the listing and the page inside PrusaSlicer', async () => {
@@ -48,6 +52,7 @@ describe('the module setup', () => {
 
     expect(await registered()).toEqual([
       'page:select-printer',
+      'settings:how-to',
       'deviceHeader:set-as-current',
       'deviceRow:set-as-current',
     ]);

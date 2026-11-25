@@ -7373,7 +7373,7 @@ export interface components {
              */
             generation: number;
             /**
-             * @description UI contributions of a module hidden for every viewer, each as slot key and identity joined by one /: pages/<path>, or settings, device_card, device_section, device_info_section, device_tab, device_action, file_action or print_section followed by /<id>. Dashboard cards cannot be hidden. At most 64, each at most 200 characters, no duplicates. This hides a menu entry or a block and grants or removes no access: a hidden page still answers a direct link. An entry the module does not declare is kept and has no effect. Omitted or empty hides nothing.
+             * @description UI contributions of a module hidden for every viewer, each as slot key and identity joined by one /: pages/<path>, or device_card, device_section, device_tab, device_action, file_action or print_section followed by /<id>. Dashboard cards, a module's settings tabs and its Printer tab cards cannot be hidden. At most 64, each at most 200 characters, no duplicates. This hides a menu entry or a block and grants or removes no access: a hidden page still answers a direct link. An entry the module does not declare is kept and has no effect. Omitted or empty hides nothing.
              * @example [
              *       "device_card/fleet-stats"
              *     ]
@@ -7692,7 +7692,7 @@ export interface components {
              */
             generation?: number;
             /**
-             * @description UI contributions of a module hidden for every viewer, each as slot key and identity joined by one /: pages/<path>, or settings, device_card, device_section, device_info_section, device_tab, device_action, file_action or print_section followed by /<id>. Dashboard cards cannot be hidden. At most 64, each at most 200 characters, no duplicates. This hides a menu entry or a block and grants or removes no access: a hidden page still answers a direct link. An entry the module does not declare is kept and has no effect. Omitted or empty hides nothing.
+             * @description UI contributions of a module hidden for every viewer, each as slot key and identity joined by one /: pages/<path>, or device_card, device_section, device_tab, device_action, file_action or print_section followed by /<id>. Dashboard cards, a module's settings tabs and its Printer tab cards cannot be hidden. At most 64, each at most 200 characters, no duplicates. This hides a menu entry or a block and grants or removes no access: a hidden page still answers a direct link. An entry the module does not declare is kept and has no effect. Omitted or empty hides nothing.
              * @example [
              *       "device_card/fleet-stats"
              *     ]
@@ -7831,7 +7831,7 @@ export interface components {
             /** @description The components this bundle hands other modules' bundles. */
             exports?: components["schemas"]["ResourceUIExport"][];
             /**
-             * @description The entries of its own interface the running module hides now, each as slot key and identity joined by one /, in the form hidden_contributions takes: pages/<path>, or settings, device_card, device_section, device_info_section, device_tab, device_action, file_action or print_section followed by /<id>. The module states it while it runs, such as when a feature of its own is switched off, and it is empty after each start until the module states it again. A client hides an entry that is here or in hidden_contributions. Like those, a hidden page still answers a direct link. Omitted or empty hides nothing.
+             * @description The entries of its own interface the running module hides now, each as slot key and identity joined by one /: pages/<path>, or settings, device_card, device_section, device_info_section, device_tab, device_action, file_action or print_section followed by /<id>. The module states it while it runs, such as when a feature of its own is switched off, and it is empty after each start until the module states it again. A client hides an entry that is here or in hidden_contributions. Like those, a hidden page still answers a direct link. Omitted or empty hides nothing.
              * @example [
              *       "pages/customers"
              *     ]

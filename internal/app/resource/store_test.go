@@ -1085,6 +1085,50 @@ func TestHiddenContributionsSurviveAWriteAndMoveNothingTheHostRuns(t *testing.T)
 	require.Equal(t, hide.HiddenContributions, again.HiddenContributions)
 }
 
+// A hidden settings tab or Printer tab card is dropped, on a write and on a
+// read, so the module's page still saves and the entry hides nothing.
+func TestAnEntryThatCanNoLongerBeHiddenIsDropped(t *testing.T) {
+	t.Parallel()
+
+	h := newHarness(t)
+	instance := mustRef(t, ref.KindSink, "webhook")
+
+	created, err := h.create(instance, spec("http", ""))
+	require.NoError(t, err)
+
+	hide := created.Instance.ResourceSpec
+	hide.HiddenContributions = []string{"settings/how-to", "device_info_section/card", "device_card/kept"}
+
+	_, err = h.update(instance, hide, h.version())
+	require.NoError(t, err)
+
+	again, err := h.get(instance)
+	require.NoError(t, err)
+	require.Equal(t, []string{"device_card/kept"}, again.HiddenContributions)
+}
+
+// An entry written into config.yaml by hand, which no write checks, is dropped
+// when the instance is read, so it hides nothing.
+func TestAHandWrittenEntryThatCanNoLongerBeHiddenIsDroppedOnRead(t *testing.T) {
+	t.Parallel()
+
+	h := newHarness(t)
+	h.writeFile(`resources:
+  sink:
+    audit:
+      type: webhook
+      hidden_contributions:
+        - settings/how-to
+        - device_info_section/card
+        - device_card/kept
+`)
+	require.NoError(t, h.store.Reload(t.Context()))
+
+	got, err := h.get(mustRef(t, ref.KindSink, "audit"))
+	require.NoError(t, err)
+	require.Equal(t, []string{"device_card/kept"}, got.HiddenContributions)
+}
+
 // TestEveryHideableSlotIsAccepted writes one entry for each slot an operator
 // may hide, the file menu and the print dialog among them.
 func TestEveryHideableSlotIsAccepted(t *testing.T) {
@@ -1098,7 +1142,7 @@ func TestEveryHideableSlotIsAccepted(t *testing.T) {
 
 	hide := created.Instance.ResourceSpec
 	hide.HiddenContributions = []string{
-		"pages/plan", "settings/plan", "device_card/plan", "device_section/plan",
+		"pages/plan", "device_card/plan", "device_section/plan",
 		"device_tab/plan", "device_action/plan", "file_action/plan", "print_section/planner",
 	}
 

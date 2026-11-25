@@ -50,6 +50,8 @@ type fakeModulePlane struct {
 	public []manifest.Route
 	// staged is the routes the operator approved to stage, with their limits.
 	staged []manifest.StagedRoute
+	// title and summary are the module's own, from its manifest.
+	title, summary string
 }
 
 func (p fakeModulePlane) Module(namespace string) (ModuleSurface, bool) {
@@ -59,7 +61,7 @@ func (p fakeModulePlane) Module(namespace string) (ModuleSurface, bool) {
 
 	return ModuleSurface{
 		Instance: p.instance, Handler: p.handler, OpenAPI: p.openapi, Mount: p.mount, Public: p.public,
-		Staged: p.staged,
+		Staged: p.staged, Title: p.title, Summary: p.summary,
 	}, true
 }
 
@@ -80,7 +82,7 @@ func (p fakeModulePlane) Root(path string) (ModuleSurface, bool) {
 
 	return ModuleSurface{
 		Instance: p.instance, Handler: p.handler, OpenAPI: p.openapi, Mount: p.mount, Public: p.public,
-		Staged: p.staged,
+		Staged: p.staged, Title: p.title, Summary: p.summary,
 	}, true
 }
 

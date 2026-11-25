@@ -163,7 +163,7 @@ One block per declared instance, keyed by kind and then by the name you choose. 
 | <a id="key-resources-kind-name-module-allowed-origins"></a>`resources.<kind>.<name>.module.allowed_origins` | list of text | - | no | The browser origins this module adds to the ones the API answers while it is switched on, each an exact https origin. An approved install writes it. |
 | <a id="key-resources-kind-name-module-channel"></a>`resources.<kind>.<name>.module.channel` | text | - | no | The marketplace channel the release came from, stable or beta. Empty reads as stable. The module index never offers a beta as the update of a stable install. |
 | <a id="key-resources-kind-name-reads"></a>`resources.<kind>.<name>.reads` | list of text | - | no | The query verbs this instance answers, where two instances of one kind would both answer them. |
-| <a id="key-resources-kind-name-hidden-contributions"></a>`resources.<kind>.<name>.hidden_contributions` | list of text | none | no | The places of the module's UI hidden from every viewer, as `<slot>/<id>`, such as `file_action/plan` or `pages/<path>`. A hidden page still opens by link. A dashboard card cannot be hidden. |
+| <a id="key-resources-kind-name-hidden-contributions"></a>`resources.<kind>.<name>.hidden_contributions` | list of text | none | no | The places of the module's UI hidden from every viewer, as `<slot>/<id>`. A hidden page still opens by link. Dashboard cards, settings tabs and Printer tab cards cannot be hidden. |
 | <a id="key-resources-kind-name-config"></a>`resources.<kind>.<name>.config` | mapping | - | no | The settings of the implementation. The core passes the block to the implementation and does not read it. |
 
 <!-- end generated -->

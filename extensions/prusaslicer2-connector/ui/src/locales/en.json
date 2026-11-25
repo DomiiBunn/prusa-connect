@@ -8,8 +8,8 @@
   "prusalink.plainHttp": "This address is plain HTTP, so the key crosses your network unencrypted. Where the server has an HTTPS address, paste that one into PrusaSlicer instead.",
   "prusalink.steps.title": "How to set up PrusaSlicer",
   "prusalink.steps.add": "Use PrusaSlicer 2.4 or later. Next to the printer profile, click Add physical printer.",
-  "prusalink.steps.host": "Set Host type to PrusaLink and paste the address into Hostname, IP or URL.",
-  "prusalink.steps.key": "Set Authorization type to API key and paste the API key.",
+  "prusalink.steps.host": "Set Host Type to PrusaLink and paste the address into Hostname, IP or URL.",
+  "prusalink.steps.key": "Set Authorization Type to API key and paste the API key.",
   "prusalink.steps.test": "Click Test.",
   "prusalink.keep.title": "Uploads from PrusaSlicer",
   "prusalink.seen.never": "PrusaSlicer has not connected yet",
@@ -20,5 +20,13 @@
   "prusalink.seen.connected": "PrusaSlicer connected",
   "prusalink.seen.lastSeen": "last seen {ago}",
   "prusalink.keep.scope": "Applies to every upload from PrusaSlicer to this printer, whoever sends it.",
-  "prusalink.keep.readOnlyNobody": "Nobody may change this until the administrator grants the extension its operate check."
+  "prusalink.keep.readOnlyNobody": "Nobody may change this until the administrator grants the extension its operate check.",
+  "howTo.title": "How to",
+  "howTo.perPrinter": "PrusaSlicer 2 Connector is set up for each printer, not for the server. Each printer has its own address and its own card.",
+  "howTo.steps.open": "Open a printer's page and its Printer tab. The PrusaSlicer 2 Connector card is under the Connection card.",
+  "howTo.steps.copy": "Copy the address and create an API key on that card.",
+  "howTo.steps.slicer": "In PrusaSlicer 2.4 or later, click Add physical printer. Set Host Type to PrusaLink and paste the address, set Authorization Type to API key and paste the key, then click Test.",
+  "howTo.steps.more": "Do the same for each printer. One key works for every printer you may operate.",
+  "howTo.keep": "Save to storage is on the same card. It is one setting for that printer, and applies to every upload from PrusaSlicer to it, whoever sends it.",
+  "howTo.limits": "The largest upload is set for the whole server, on the Uploads tab."
 }

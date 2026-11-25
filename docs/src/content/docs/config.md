@@ -273,12 +273,13 @@ type takes are listed under
 running build at `GET /api/v1/vocabularies/extensions`.
 
 `hidden_contributions` hides single entries of a module's interface for every
-viewer. A module can add a page, a settings pane, a line on each printer card,
-a section, a tab and an action to a printer. It can also add an item to each
-file's menu and a section to the print dialog. Each entry is written as
-`<slot>/<identity>`. The slot is `pages`, `settings`, `device_card`,
-`device_section`, `device_tab`, `device_action`, `file_action` or
-`print_section`. The identity is the page's `path`, or the `id` of any other
+viewer. A module can add a page, a line on each printer card, a section, a tab
+and an action to a printer. It can also add an item to each file's menu and a
+section to the print dialog. Each entry is written as `<slot>/<identity>`. The
+slot is `pages`, `device_card`, `device_section`, `device_tab`,
+`device_action`, `file_action` or `print_section`. A module's settings tab and
+its card on a printer's Printer tab are where it is set up, so they cannot be
+hidden. An entry of `settings` or `device_info_section` is dropped. The identity is the page's `path`, or the `id` of any other
 entry. This keeps the statistics page and hides its line on every printer card:
 
 ```yaml

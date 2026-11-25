@@ -42,9 +42,12 @@
 </script>
 
 <div class="flex flex-col gap-3" data-part="visibility">
-  <p class="text-sm text-muted-foreground">
-    {t('app.settings.extensions.visibility.note')}
-  </p>
+  <!-- The note is about pages, so it shows only beside one. -->
+  {#if contributions.some((one) => one.kind === 'page')}
+    <p class="text-sm text-muted-foreground">
+      {t('app.settings.extensions.visibility.note')}
+    </p>
+  {/if}
   {#if locked !== undefined}
     <p class="text-sm" data-part="visibility-locked">{locked}</p>
   {/if}

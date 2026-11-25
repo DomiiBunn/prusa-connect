@@ -20,7 +20,7 @@ func (s *Store) project(
 			Required: declared.Spec.Required,
 			Config:   httpapi.ResourceConfig(Redact(options, known, declared.Spec.Config)),
 
-			HiddenContributions: declared.Spec.HiddenContributions,
+			HiddenContributions: keptHidden(declared.Spec.HiddenContributions),
 		},
 		Kind:       declared.Ref.Kind().String(),
 		Name:       declared.Ref.ID(),
