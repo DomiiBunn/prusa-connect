@@ -3,6 +3,7 @@ package httpapi
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -722,4 +723,14 @@ func TestTheWizardTriesAProviderBehindTheCode(t *testing.T) {
 	require.JSONEq(t, `{"issuer":"https://sso.example.com","discovery":{"status":"passed"},`+
 		`"client":{"status":"passed"},"redirect":{"status":"passed"}}`, rec.Body.String())
 	require.Equal(t, []string{"K7QD-3M9X-TP2A"}, setup.codes)
+}
+
+func TestAnUnexpectedSetupFailureKeepsItsCause(t *testing.T) {
+	t.Parallel()
+
+	cause := errors.New("open /etc/prusa-connect/config.yaml: permission denied")
+	err := setupFault(cause, "read the configuration the first run asks for")
+
+	require.ErrorIs(t, err, cause)
+	require.Contains(t, err.Error(), "permission denied")
 }

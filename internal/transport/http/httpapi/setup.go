@@ -578,7 +578,7 @@ func setupFault(err error, doing string) error {
 		return raised
 	}
 
-	return httpfault.Unexpected(doing)
+	return httpfault.Unexpected(doing).Wrap(err)
 }
 
 // setupOpenOperations are the operations a pending install still answers. They
