@@ -43,6 +43,8 @@ export const SLOT_NAMES = [
   'device-upload-action',
   'device-header',
   'device-row',
+  'job-column',
+  'job-section',
 ] as const;
 export type SlotName = (typeof SLOT_NAMES)[number];
 export type Screen =
@@ -52,7 +54,9 @@ export type Screen =
   | 'printers'
   | 'settings'
   | 'storage'
-  | 'print-dialog';
+  | 'print-dialog'
+  | 'jobs'
+  | 'job-detail';
 export type SectionSlot =
   | 'settings'
   | 'device-card'
@@ -65,7 +69,9 @@ export type SectionSlot =
   | 'camera-section'
   | 'camera-view'
   | 'device-header'
-  | 'device-row';
+  | 'device-row'
+  | 'job-column'
+  | 'job-section';
 export type ActionSlot =
   | 'device-action'
   | 'file-action'
@@ -85,6 +91,8 @@ export const SLOT_KEYS = {
   'camera-view': 'camera_view',
   'device-header': 'device_header',
   'device-row': 'device_row',
+  'job-column': 'job_column',
+  'job-section': 'job_section',
   'device-action': 'device_action',
   'file-action': 'file_action',
   'device-file-action': 'device_file_action',
@@ -111,6 +119,8 @@ export const SLOT_SCREENS = {
   'device-upload-action': 'printer-detail',
   'device-header': 'printer-detail',
   'device-row': 'printers',
+  'job-column': 'jobs',
+  'job-section': 'job-detail',
 } as const satisfies Record<SlotName, Screen>;
 
 export const SLOT_FORMS = {
@@ -133,6 +143,8 @@ export const SLOT_FORMS = {
   'device-upload-action': 'action',
   'device-header': 'section',
   'device-row': 'section',
+  'job-column': 'section',
+  'job-section': 'section',
 } as const satisfies Record<
   SlotName,
   'page' | 'section' | 'action' | 'card' | 'derived'
@@ -155,6 +167,8 @@ export interface SectionProps {
   'camera-view': { camera: string };
   'device-header': { deviceId: string };
   'device-row': { deviceId: string };
+  'job-column': { jobId: string };
+  'job-section': { jobId: string };
 }
 
 export interface ActionRuns {
@@ -176,7 +190,9 @@ export type SectionOutletTarget =
   | { screen: 'printer-detail'; name: 'camera-section'; camera: string }
   | { screen: 'printer-detail'; name: 'camera-view'; camera: string }
   | { screen: 'printer-detail'; name: 'device-header'; deviceId: string }
-  | { screen: 'printers'; name: 'device-row'; deviceId: string };
+  | { screen: 'printers'; name: 'device-row'; deviceId: string }
+  | { screen: 'jobs'; name: 'job-column'; jobId: string }
+  | { screen: 'job-detail'; name: 'job-section'; jobId: string };
 
 export type ActionOutletTarget =
   | { name: 'device-action'; deviceId: string }
@@ -263,6 +279,13 @@ export interface ModuleRegister {
   ): void;
   /** A small control at the end of each printer in every view of the listing, with no frame of the host's. */
   deviceRow(id: string, component: Component<SectionProps['device-row']>): void;
+  /** A column of the module's own in the Jobs listing, after the core's. The title is its heading. */
+  jobColumn(id: string, component: Component<SectionProps['job-column']>): void;
+  /** A section on a print's page, under the core's details. */
+  jobSection(
+    id: string,
+    component: Component<SectionProps['job-section']>,
+  ): void;
   /** Hands a component to other modules' bundles, under a name ui.exports in the manifest names. */
   component(name: string, component: Component<never>): void;
 }
@@ -321,6 +344,12 @@ export const buildRegister = (handlers: RegisterHandlers): ModuleRegister => ({
   },
   deviceRow: (id, component) => {
     handlers.section('device-row', id, component);
+  },
+  jobColumn: (id, component) => {
+    handlers.section('job-column', id, component);
+  },
+  jobSection: (id, component) => {
+    handlers.section('job-section', id, component);
   },
   component: (name, component) => {
     handlers.component?.(name, component);

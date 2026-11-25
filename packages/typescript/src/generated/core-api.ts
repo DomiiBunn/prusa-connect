@@ -7319,6 +7319,10 @@ export interface components {
             file_tab?: components["schemas"]["ResourceSection"][] | null;
             /** @description What the file holds, drawn in place of the core's part, in the Contents tab of the file's page. */
             file_view?: components["schemas"]["ResourceSection"][] | null;
+            /** @description A column of the module's own in the Jobs listing, after the core's. The title is its heading. */
+            job_column?: components["schemas"]["ResourceSection"][] | null;
+            /** @description A section on a print's page, under the core's details. */
+            job_section?: components["schemas"]["ResourceSection"][] | null;
             /** @description A whole screen with a route of its own, and an entry in the sidebar unless it is hidden. */
             pages?: components["schemas"]["ResourcePage"][] | null;
             /** @description A section of the print dialog, below the printers, for a file on a storage of this server. */

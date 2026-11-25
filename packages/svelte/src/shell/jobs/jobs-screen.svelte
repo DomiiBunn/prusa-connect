@@ -55,6 +55,8 @@
     onPrinted,
     thumbnailFor,
     notice,
+    columns = [],
+    cell,
   }: JobsScreenProps = $props();
 
   // The print whose file the dialog sends again, while the dialog is open.
@@ -252,6 +254,8 @@
             <JobsRows
               rows={listing.page}
               {shows}
+              {columns}
+              {cell}
               {printAgainOf}
               {thumbnailFor}
             />
@@ -259,6 +263,8 @@
             <JobsTable
               rows={listing.page}
               {shows}
+              {columns}
+              {cell}
               {sort}
               {onSort}
               {printAgainOf}

@@ -1,3 +1,5 @@
+import type { Snippet } from 'svelte';
+
 import type { JobDetail } from '../../data';
 import type { PrintJob } from '../../data/services/jobs';
 import type { Device, PrintAction, StateTransition } from '../../domain';
@@ -34,4 +36,9 @@ export interface JobDetailScreenProps {
   onPrint?: PrintAction | undefined;
   /** Called with the printers' ids once every one of them has taken the file. */
   onPrinted?: ((deviceIds: readonly string[]) => void) | undefined;
+  /**
+   * The job-section slot's outlet, drawn under the details. The outlet draws a
+   * card for each section a module registered, and nothing when there is none.
+   */
+  sections?: Snippet<[jobId: string]> | undefined;
 }

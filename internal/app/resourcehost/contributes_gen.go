@@ -30,5 +30,7 @@ func contributesOf(declared manifest.Contributes) httpapi.ResourceContributes {
 		DeviceUploadAction: actionsOf(declared.Actions[manifest.SlotDeviceUploadAction]),
 		DeviceHeader:       sectionsOf(declared.Sections[manifest.SlotDeviceHeader]),
 		DeviceRow:          sectionsOf(declared.Sections[manifest.SlotDeviceRow]),
+		JobColumn:          sectionsOf(declared.Sections[manifest.SlotJobColumn]),
+		JobSection:         sectionsOf(declared.Sections[manifest.SlotJobSection]),
 	}
 }

@@ -6,6 +6,7 @@
     lastSentBefore,
   } from '@prusa/connect-ui/data';
   import { JobDetailScreen, printerHref } from '@prusa/connect-ui/shell';
+  import { SlotOutlet } from '@prusa/connect-ui/slots';
   import { onMount } from 'svelte';
 
   import { client } from '../client';
@@ -80,7 +81,13 @@
   );
 </script>
 
+<!-- A module's sections about this print, each a card under the details. -->
+{#snippet sections(id: string)}
+  <SlotOutlet screen="job-detail" name="job-section" jobId={id} />
+{/snippet}
+
 <JobDetailScreen
+  {sections}
   {jobId}
   {source}
   {device}

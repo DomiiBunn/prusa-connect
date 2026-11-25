@@ -67,6 +67,12 @@
 {{- else if eq .Slot "device-row"}},
 
   "{{$.Name}}.deviceRow.body": "{{.Title}}"
+{{- else if eq .Slot "job-column"}},
+
+  "{{$.Name}}.jobColumn.body": "{{.Title}}"
+{{- else if eq .Slot "job-section"}},
+
+  "{{$.Name}}.jobSection.body": "{{.Title}} is drawing under this print's details."
 {{- end}}
 {{- end}}
 }

@@ -227,3 +227,24 @@
     />
   </div>
 </Story>
+
+<!-- What a module draws in the job-section slot, under the print's details. -->
+{#snippet sections(jobId: string)}
+  <section class="flex flex-col gap-2" data-job={jobId}>
+    <h3 class="text-sm font-semibold">Filament</h3>
+    <p class="text-sm text-muted-foreground">Tool 1 · Prusament PLA · 38 g</p>
+  </section>
+{/snippet}
+
+<Story name="With A Module Section" asChild>
+  <JobDetailScreen
+    jobId={JOB_ID}
+    source={answered(finished)}
+    device={printer}
+    jobsHref="/jobs"
+    printerHref="/printers/p0"
+    {fileHref}
+    {onPrint}
+    {sections}
+  />
+</Story>

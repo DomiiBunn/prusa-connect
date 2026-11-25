@@ -149,7 +149,7 @@ func entryKeys(keys []string, slot Slot) []string {
 		out = append(out, "file_types")
 	case SubjectDevice:
 		out = append(out, "devices")
-	case SubjectNone, SubjectCamera:
+	case SubjectNone, SubjectCamera, SubjectJob:
 	}
 
 	if slot.Primary {

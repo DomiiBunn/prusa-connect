@@ -1,5 +1,7 @@
 <!-- The same facts as the table. -->
 <script lang="ts">
+  import type { Snippet } from 'svelte';
+
   import FileCode2Icon from '@lucide/svelte/icons/file-code-2';
 
   import { PRINTER_STATE_LABEL_KEY } from '../../domain';
@@ -14,16 +16,21 @@
   } from '../../primitives';
   import { stateBadgeVariant } from '../printers/presentation';
   import JobsRowActions from './jobs-row-actions.svelte';
-  import type { JobFieldId, JobRow } from './types';
+  import type { JobColumn, JobFieldId, JobRow } from './types';
 
   let {
     rows,
     shows,
     printAgainOf,
     thumbnailFor,
+    columns = [],
+    cell,
   }: {
     rows: readonly JobRow[];
     shows: (field: JobFieldId) => boolean;
+    /** The job-column slot's columns, drawn after the core's values. */
+    columns?: readonly JobColumn[] | undefined;
+    cell?: Snippet<[columnId: string, jobId: string]> | undefined;
     /** The Print again press for one row, or undefined where the row offers none. */
     printAgainOf?: ((row: JobRow) => (() => void) | undefined) | undefined;
     thumbnailFor?: ((row: JobRow) => string | undefined) | undefined;
@@ -59,6 +66,18 @@
         <span class="min-w-0 truncate">{row.printerName}</span>
       </a>
     {/snippet}
+    {#snippet moduleValues()}
+      <!-- A module's values, each named by its column's heading. -->
+      {#each columns as column (column.id)}
+        <span
+          class="inline-flex items-center gap-1"
+          data-module-column={column.id}
+          title={column.label}
+        >
+          {@render cell?.(column.id, row.id)}
+        </span>
+      {/each}
+    {/snippet}
     {#snippet preview()}
       <FileThumbnail
         name={row.fileName}
@@ -79,6 +98,7 @@
         shows('started') ? formatDateTime(row.started) : undefined,
         shows('duration') ? span(row) : undefined,
         shows('progress') ? formatUnit(row.progress, '%') : undefined,
+        columns.length > 0 ? moduleValues : undefined,
       ]}
       {...shows('preview') ? { leading: preview } : {}}
       roomy={shows('preview')}

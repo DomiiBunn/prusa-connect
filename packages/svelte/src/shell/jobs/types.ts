@@ -90,6 +90,12 @@ export interface JobFacetSelection {
   printer: readonly string[];
 }
 
+/** A column a module adds to the listing: its id and the heading it declared. */
+export interface JobColumn {
+  readonly id: string;
+  readonly label: string;
+}
+
 export interface JobsScreenProps {
   jobs: JobsSource;
   store?: ListingStore;
@@ -107,4 +113,11 @@ export interface JobsScreenProps {
   thumbnailFor?: ((row: JobRow) => string | undefined) | undefined;
   /** A line under the heading, such as how much of the list is shown. */
   notice?: Snippet | undefined;
+  /**
+   * The columns modules declared for the job-column slot, after the core's
+   * own. Each cell is drawn by `cell`.
+   */
+  columns?: readonly JobColumn[] | undefined;
+  /** One module column's value for one print: the job-column slot's outlet. */
+  cell?: Snippet<[columnId: string, jobId: string]> | undefined;
 }

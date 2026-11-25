@@ -584,6 +584,22 @@ const AreaRowEnd Area = "row-end"
 
 AreaRowEnd is the trailing edge of each printer in the listing, in the cards, the rows, the table and the camera frames.
 
+#### `AreaJobColumns` {#manifest-areajobcolumns}
+
+```go
+const AreaJobColumns Area = "job-columns"
+```
+
+AreaJobColumns is the columns of the Jobs listing after the core's own, and the values of each print in its narrow rows.
+
+#### `AreaJobFoot` {#manifest-areajobfoot}
+
+```go
+const AreaJobFoot Area = "job-foot"
+```
+
+AreaJobFoot is the part of a print's page under the core's details.
+
 #### `Areas` {#manifest-areas}
 
 ```go
@@ -1452,6 +1468,22 @@ const ScreenPrintDialog Screen = "print-dialog"
 
 ScreenPrintDialog is the dialog that sends one file to the printers a person ticks.
 
+#### `ScreenJobs` {#manifest-screenjobs}
+
+```go
+const ScreenJobs Screen = "jobs"
+```
+
+ScreenJobs is the listing of the prints the printers ran.
+
+#### `ScreenJobDetail` {#manifest-screenjobdetail}
+
+```go
+const ScreenJobDetail Screen = "job-detail"
+```
+
+ScreenJobDetail is the page of one print.
+
 #### `Screens` {#manifest-screens}
 
 ```go
@@ -1846,6 +1878,22 @@ const SlotDeviceRow SlotName = "device-row"
 
 SlotDeviceRow is a place at the trailing edge of each printer in every view of the listing, drawn only for what a bundle registers (ADR-20261112-62y).
 
+#### `SlotJobColumn` {#manifest-slotjobcolumn}
+
+```go
+const SlotJobColumn SlotName = "job-column"
+```
+
+SlotJobColumn is a column of the module's own in the Jobs listing, one value for each print. The manifest names its heading.
+
+#### `SlotJobSection` {#manifest-slotjobsection}
+
+```go
+const SlotJobSection SlotName = "job-section"
+```
+
+SlotJobSection is a section of the module's own on a print's page, under the core's details.
+
 #### `SlotName.Field` {#manifest-slotname-field}
 
 ```go
@@ -2000,6 +2048,14 @@ const SubjectPrinterFile
 ```
 
 SubjectPrinterFile hands a printer file reference: the device id, a colon, and the file's path on the printer, such as usb/part.bgcode. A device id never holds a colon, so the first one splits the two, the way it splits a file reference.
+
+#### `SubjectJob` {#manifest-subjectjob}
+
+```go
+const SubjectJob
+```
+
+SubjectJob hands the id of one print, the one the core's jobs routes and the job events carry.
 
 #### `Subject.Doc` {#manifest-subject-doc}
 
