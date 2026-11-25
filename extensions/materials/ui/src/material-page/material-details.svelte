@@ -22,6 +22,7 @@
   import { MaterialSwatch } from '@prusa/connect-ui/primitives';
 
   import type { Detail } from '../api';
+  import { shownColour } from '../css-colour';
   import MaterialIcon from '../material-icon/material-icon.svelte';
   import { heldHost } from '../host';
 
@@ -114,7 +115,8 @@
     {
       id: 'colour',
       label: t('materials.details.colour'),
-      value: detail.color_rgba === '' ? undefined : detail.color_rgba,
+      value:
+        detail.color_rgba === '' ? undefined : shownColour(detail.color_rgba),
       mono: true,
     },
   ]);

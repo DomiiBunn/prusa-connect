@@ -466,6 +466,18 @@ describe('the material page', () => {
     }
   });
 
+  it('writes an opaque colour without its alpha byte', async () => {
+    const stub = started('a', standard());
+    await draw(stub);
+
+    await expect
+      .element(page.getByText('#3d3e3d', { exact: true }))
+      .toBeVisible();
+    await expect
+      .element(page.getByText('#3d3e3dff', { exact: true }))
+      .not.toBeInTheDocument();
+  });
+
   it('asks before it deletes a spool, then removes the row', async () => {
     const stub = started(
       'a',

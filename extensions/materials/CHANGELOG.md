@@ -7,6 +7,12 @@ Write the entry in the same change as the code. One bullet per behaviour a
 person outside this repository can observe: a route, a setting, a screen, a
 refusal. Name the route and the setting key, never a function or a file.
 
+## 0.2.8 - 2026-11-24
+
+### Changed
+
+- A material's page writes an opaque colour as `#rrggbb`, without the `ff` alpha byte, so it pastes into a slicer as is. A colour that is not opaque keeps all eight digits.
+
 ## 0.2.7 - 2026-11-19
 
 ### Added
