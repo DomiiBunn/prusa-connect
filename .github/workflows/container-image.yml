@@ -69,7 +69,7 @@ jobs:
       id-token: write
 
     steps:
-      # GitHub keeps the owner's capitals, as in Prusa-Research, and a registry
+      # GitHub keeps the capital letters in the owner's name, and a registry
       # refuses an image name with a capital letter.
       - name: Read the version and name the image
         id: version
