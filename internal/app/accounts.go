@@ -167,7 +167,7 @@ func (a accounts) ChangePassword(ctx context.Context, id, current, next string) 
 
 	token, cred, err := auth.IssueAtGeneration(ctx, a.sessions, id, auth.KindSession, time.Now(), generation)
 	if err != nil {
-		return httpapi.Session{}, httpfault.Unexpected("open a session after the password change")
+		return httpapi.Session{}, httpfault.Unexpected("open a session after the password change").Wrap(err)
 	}
 
 	return httpapi.Session{Token: string(token), ExpiresAt: cred.ExpiresAt}, nil
@@ -196,7 +196,7 @@ func (a accounts) ResetPassword(ctx context.Context, id, next string) error {
 func (a accounts) endCredentials(ctx context.Context, id string) error {
 	ended, err := revokeAccountCredentials(ctx, a.verifier, a.pairings, id)
 	if err != nil {
-		return httpfault.Unexpected("end the sessions and api credentials of the account that changed")
+		return httpfault.Unexpected("end the sessions and api credentials of the account that changed").Wrap(err)
 	}
 
 	if ended != (endedCredentials{}) {
@@ -452,7 +452,7 @@ func accountRefusal(err error) error {
 		return raised
 	}
 
-	return httpfault.Unexpected("read or write the account store")
+	return httpfault.Unexpected("read or write the account store").Wrap(err)
 }
 
 // invalidAccountFault names the field the store refused, so a caller is not

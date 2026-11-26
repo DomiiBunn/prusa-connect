@@ -19,6 +19,7 @@ import (
 	"github.com/prusa3d/prusa-connect/internal/platform/auth"
 	"github.com/prusa3d/prusa-connect/internal/platform/auth/dbstore"
 	"github.com/prusa3d/prusa-connect/internal/transport/http/httpapi"
+	"github.com/prusa3d/prusa-connect/internal/transport/http/httpfault"
 	"github.com/prusa3d/prusa-connect/sdk/fault"
 )
 
@@ -783,4 +784,23 @@ func TestAPasswordChangeEndsAChainThroughAnotherPerson(t *testing.T) {
 		_, err = pairingRows.Lookup(t.Context(), "prusa-account", subject)
 		require.ErrorIsf(t, err, auth.ErrNoPairing, "the pairing %q survived the root's change", subject)
 	}
+}
+
+// TestAnAccountStoreThatCannotBeWrittenKeepsItsCause is the account store
+// failing under a request. The answer is redacted, so the cause carried here
+// is what reaches the log line under the trace id.
+func TestAnAccountStoreThatCannotBeWrittenKeepsItsCause(t *testing.T) {
+	t.Parallel()
+
+	host := testHost(t)
+	local, _ := wiredAccountsOn(t, localCore(t), host)
+
+	_, err := local.Setup(t.Context(), httpapi.NewAccount{Username: testOwner, Password: testPassword})
+	require.NoError(t, err)
+
+	require.NoError(t, host.db.Close())
+
+	_, err = local.Create(t.Context(), httpapi.NewAccount{Username: "grace@example.com", Password: testPassword})
+	requireFaultCode(t, err, httpfault.CodeUnexpected())
+	require.ErrorContains(t, err, "database is closed")
 }

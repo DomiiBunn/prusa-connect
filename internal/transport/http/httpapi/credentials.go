@@ -2,7 +2,6 @@ package httpapi
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"time"
 
@@ -251,7 +250,7 @@ func registerCreateCredential(api huma.API, cfg Config) {
 		// check and the save leaves the row refused.
 		fence, err := cfg.Credentials.Fence(ctx, subject.String(), minter.String(), root)
 		if err != nil {
-			return nil, credentialFault(err, "read the credential generations")
+			return nil, serverFault(err, "read the credential generations")
 		}
 
 		if !cfg.Credentials.SignedIn(requestFrom(ctx)) {
@@ -275,7 +274,7 @@ func registerCreateCredential(api huma.API, cfg Config) {
 
 		issued, err := cfg.Credentials.Issue(ctx, spec)
 		if err != nil {
-			return nil, credentialFault(err, "mint the credential")
+			return nil, serverFault(err, "mint the credential")
 		}
 
 		return &createCredentialOutput{Status: http.StatusCreated, Body: createdCredentialOf(issued)}, nil
@@ -302,7 +301,7 @@ func registerListCredentials(api huma.API, cfg Config) {
 
 		items, err := cfg.Credentials.List(ctx, subject.String())
 		if err != nil {
-			return nil, credentialFault(err, "list the credentials")
+			return nil, serverFault(err, "list the credentials")
 		}
 
 		out := &listCredentialsOutput{}
@@ -342,7 +341,7 @@ func registerRevokeCredential(api huma.API, cfg Config) {
 
 		held, err := cfg.Credentials.Get(ctx, in.Credential)
 		if err != nil {
-			return nil, credentialFault(err, "find the credential")
+			return nil, serverFault(err, "find the credential")
 		}
 
 		// Revoking another credential is administering access, so a
@@ -359,7 +358,7 @@ func registerRevokeCredential(api huma.API, cfg Config) {
 		}
 
 		if err = cfg.Credentials.Revoke(ctx, in.Credential); err != nil {
-			return nil, credentialFault(err, "revoke the credential")
+			return nil, serverFault(err, "revoke the credential")
 		}
 
 		return &revokeCredentialOutput{Status: http.StatusNoContent}, nil
@@ -408,18 +407,6 @@ func credentialSubject(ctx context.Context, cfg Config, spelling string) (authz.
 // token.
 func holdsAPICredentials(typ authz.Type) bool {
 	return typ == authz.TypeUser || typ == authz.TypeServiceAccount
-}
-
-// credentialFault keeps a refusal the implementation raised and turns anything
-// else into the server's own failure. A credential store that could not be
-// written is not the caller's mistake, and reporting it as one sends them
-// looking at what they typed.
-func credentialFault(err error, doing string) error {
-	if raised, ok := errors.AsType[*fault.Fault](err); ok {
-		return raised
-	}
-
-	return httpfault.Unexpected(doing)
 }
 
 // noCredentials is the credential minter of a server wired without one. It

@@ -62,7 +62,7 @@ func registerSetupOIDC(api huma.API, cfg Config) {
 	}, func(ctx context.Context, in *setupOIDCInput) (*setupOIDCOutput, error) {
 		check, err := cfg.Setup.CheckOIDC(ctx, setupClientOf(cfg, requestFrom(ctx)), in.Code, in.Body)
 		if err != nil {
-			return nil, withRetryAfter(setupFault(err, "try the sign-in provider"))
+			return nil, withRetryAfter(serverFault(err, "try the sign-in provider"))
 		}
 
 		return &setupOIDCOutput{Body: check}, nil

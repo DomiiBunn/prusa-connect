@@ -187,6 +187,19 @@ func faultFor(ctx context.Context, status int, msg string, errs []error) *fault.
 	return httpfault.Unexpected(detail)
 }
 
+// serverFault keeps a refusal the implementation raised and turns anything
+// else into this server's own failure, with the error as its cause. A store
+// that could not be read or written is not the caller's mistake, and reporting
+// it as one sends them looking at what they typed. The answer stays redacted;
+// the cause reaches the operator in the line logUnexpected writes.
+func serverFault(err error, doing string) error {
+	if raised, ok := errors.AsType[*fault.Fault](err); ok {
+		return raised
+	}
+
+	return httpfault.Unexpected(doing).Wrap(err)
+}
+
 // firstDetail names the member Huma's validator rejected. fault.Params is a
 // flat set, so one location is named and the rest reach the client through the
 // detail text joinDetails builds.

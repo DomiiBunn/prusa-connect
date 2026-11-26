@@ -196,10 +196,7 @@ func (f *firstRun) recordForRestart(
 	}
 
 	if err = f.writeForRestart(document, setupModeFor(decision.Configuration, contract), pending); err != nil {
-		f.logger.ErrorContext(ctx, "the first-run wizard's files could not be written",
-			"setup", config.SetupFile(f.configPath), "error", err.Error())
-
-		return httpapi.SetupResult{}, httpfault.Unexpected("write the configuration the wizard confirmed")
+		return httpapi.SetupResult{}, httpfault.Unexpected("write the configuration the wizard confirmed").Wrap(err)
 	}
 
 	f.code.consume()

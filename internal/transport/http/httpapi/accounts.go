@@ -328,7 +328,7 @@ func registerSetup(api huma.API, cfg Config) {
 			return err
 		})
 		if err != nil {
-			return nil, withRetryAfter(accountFault(err, "create the first administrator"))
+			return nil, withRetryAfter(serverFault(err, "create the first administrator"))
 		}
 
 		created.Subject = subjectOfAccount(created)
@@ -421,7 +421,7 @@ func registerListAccounts(api huma.API, cfg Config) {
 
 		items, err := cfg.Accounts.List(ctx)
 		if err != nil {
-			return nil, accountFault(err, "list the accounts")
+			return nil, serverFault(err, "list the accounts")
 		}
 
 		held, err := orgRolesHeld(ctx, cfg)
@@ -475,7 +475,7 @@ func registerCreateAccount(api huma.API, cfg Config) {
 
 		created, err := cfg.Accounts.Create(ctx, newAccountOf(in.Body))
 		if err != nil {
-			return nil, accountFault(err, "create the account")
+			return nil, serverFault(err, "create the account")
 		}
 
 		created.Subject = subjectOfAccount(created)
@@ -512,7 +512,7 @@ func registerDeleteAccount(api huma.API, cfg Config) {
 		}
 
 		if err := cfg.Accounts.Delete(ctx, in.Account); err != nil {
-			return nil, accountFault(err, "delete the account")
+			return nil, serverFault(err, "delete the account")
 		}
 
 		return &deleteAccountOutput{Status: http.StatusNoContent}, nil
@@ -558,7 +558,7 @@ func registerSetAccountPassword(api huma.API, cfg Config) {
 				ctx, in.Account, in.Body.CurrentPassword, in.Body.NewPassword,
 			)
 			if changeErr != nil {
-				return nil, accountFault(changeErr, "change the password")
+				return nil, serverFault(changeErr, "change the password")
 			}
 
 			return &setPasswordOutput{Status: http.StatusNoContent, SetCookie: sessionCookie(cfg, fresh)}, nil
@@ -569,7 +569,7 @@ func registerSetAccountPassword(api huma.API, cfg Config) {
 		}
 
 		if resetErr := cfg.Accounts.ResetPassword(ctx, in.Account, in.Body.NewPassword); resetErr != nil {
-			return nil, accountFault(resetErr, "reset the password")
+			return nil, serverFault(resetErr, "reset the password")
 		}
 
 		return &setPasswordOutput{Status: http.StatusNoContent}, nil
@@ -614,7 +614,7 @@ func registerSetAccountRole(api huma.API, cfg Config) {
 		// for somebody who is not on this server.
 		account, err := cfg.Accounts.Get(ctx, in.Account)
 		if err != nil {
-			return nil, accountFault(err, "read the account")
+			return nil, serverFault(err, "read the account")
 		}
 
 		subject, err := authz.NewSubject(authz.TypeUser, account.ID)
@@ -759,18 +759,6 @@ func loginFault(err error) *fault.Fault {
 	}
 
 	return fault.AuthLoginRefused.New("the username and password name no account on this server")
-}
-
-// accountFault keeps a refusal the implementation raised and turns anything
-// else into the server's own failure. An account store that could not be
-// written is not the caller's mistake, and reporting it as one sends them
-// looking at what they typed.
-func accountFault(err error, doing string) error {
-	if raised, ok := errors.AsType[*fault.Fault](err); ok {
-		return raised
-	}
-
-	return httpfault.Unexpected(doing)
 }
 
 // subjectOfAccount renders an account's id the way a grant names it. An

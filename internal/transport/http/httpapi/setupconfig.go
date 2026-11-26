@@ -95,7 +95,7 @@ func registerSetupConfiguration(api huma.API, cfg Config) {
 	}, func(ctx context.Context, in *setupConfigurationInput) (*setupConfigurationOutput, error) {
 		contract, err := cfg.Setup.Configuration(ctx, setupClientOf(cfg, requestFrom(ctx)), in.Code)
 		if err != nil {
-			return nil, withRetryAfter(setupFault(err, "read the configuration the first run asks for"))
+			return nil, withRetryAfter(serverFault(err, "read the configuration the first run asks for"))
 		}
 
 		if contract.Keys == nil {
@@ -158,7 +158,7 @@ func registerSetupStorage(api huma.API, cfg Config) {
 	}, func(ctx context.Context, in *setupStorageInput) (*setupStorageOutput, error) {
 		check, err := cfg.Setup.CheckStorage(ctx, setupClientOf(cfg, requestFrom(ctx)), in.Code, in.Body.Root)
 		if err != nil {
-			return nil, withRetryAfter(setupFault(err, "check the folder for uploads"))
+			return nil, withRetryAfter(serverFault(err, "check the folder for uploads"))
 		}
 
 		return &setupStorageOutput{Body: check}, nil
@@ -212,7 +212,7 @@ func registerSetupCertificates(api huma.API, cfg Config) {
 	}, func(ctx context.Context, in *setupCertificatesInput) (*setupCertificatesOutput, error) {
 		made, err := cfg.Setup.CreateCertificates(ctx, setupClientOf(cfg, requestFrom(ctx)), in.Code, in.Body.Names)
 		if err != nil {
-			return nil, withRetryAfter(setupFault(err, "make the certificates"))
+			return nil, withRetryAfter(serverFault(err, "make the certificates"))
 		}
 
 		return &setupCertificatesOutput{Body: made}, nil

@@ -292,7 +292,7 @@ func registerPrincipal(api huma.API, cfg Config) {
 		}
 
 		if err != nil {
-			return nil, accountFault(err, "read the signed-in account")
+			return nil, serverFault(err, "read the signed-in account")
 		}
 
 		out.Body.DisplayName = account.DisplayName

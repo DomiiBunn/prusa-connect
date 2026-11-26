@@ -336,22 +336,18 @@ func (f *firstRun) Record(
 	}
 
 	if err := f.store.RecordAdmission(admission); err != nil {
-		f.logger.ErrorContext(ctx, "the admission choice could not be written",
-			"admission", admission, "error", err.Error())
-
-		return httpapi.SetupResult{}, httpfault.Unexpected("record how a new printer joins this server")
+		return httpapi.SetupResult{}, httpfault.Unexpected("record how a new printer joins this server").
+			Wrap(fmt.Errorf("admission %q: %w", admission, err))
 	}
 
 	if err := f.store.RecordSetupMode(decision.Mode); err != nil {
-		f.logger.ErrorContext(ctx, "the first-run decision could not be written",
-			"mode", decision.Mode, "error", err.Error())
-
 		if errors.Is(err, resource.ErrSetupRecorded) {
 			return httpapi.SetupResult{}, fault.AuthSetupClosed.New(
 				"this server has already recorded what it does about identity")
 		}
 
-		return httpapi.SetupResult{}, httpfault.Unexpected("record what this server does about identity")
+		return httpapi.SetupResult{}, httpfault.Unexpected("record what this server does about identity").
+			Wrap(fmt.Errorf("mode %q: %w", decision.Mode, err))
 	}
 
 	f.mode.set(decision.Mode)

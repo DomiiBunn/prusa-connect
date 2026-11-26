@@ -1,8 +1,10 @@
 package httpapi
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"log/slog"
 	"net/http"
 	"sync"
 	"testing"
@@ -164,7 +166,18 @@ func (c *fakeCredentials) Revoke(_ context.Context, id string) error {
 func serverWithCredentials(t *testing.T, credentials Credentials, grants GrantStore) *Server {
 	t.Helper()
 
+	return serverWithCredentialsLogging(t, credentials, grants, nil)
+}
+
+// serverWithCredentialsLogging is serverWithCredentials writing its log to
+// logger.
+func serverWithCredentialsLogging(
+	t *testing.T, credentials Credentials, grants GrantStore, logger *slog.Logger,
+) *Server {
+	t.Helper()
+
 	server, err := New(Config{
+		Logger:      logger,
 		Version:     "test",
 		Principals:  fixedPrincipal("user:operator"),
 		Resources:   seededStore(),
@@ -624,4 +637,51 @@ func TestAMintRecordsTheRootOfTheCallersChain(t *testing.T) {
 	require.Len(t, credentials.issued, 1)
 	require.Equal(t, "user:operator", credentials.issued[0].MintedBy)
 	require.Equal(t, "user:ada", credentials.issued[0].RootCreator, "the mint did not record the caller's root")
+}
+
+// failingCredentials is a credential store whose listing fails with an error
+// that is not a fault, as a database that went away does.
+type failingCredentials struct {
+	*fakeCredentials
+
+	err error
+}
+
+func (c failingCredentials) List(context.Context, string) ([]APICredential, error) {
+	return nil, c.err
+}
+
+// TestACredentialStoreFailureIsLoggedWithItsCause holds the log line an
+// operator reads for a credential store that failed. The answer is redacted,
+// so the cause in that line is the one way to learn why the listing failed.
+func TestACredentialStoreFailureIsLoggedWithItsCause(t *testing.T) {
+	t.Parallel()
+
+	var written bytes.Buffer
+
+	logger := slog.New(slog.NewJSONHandler(&written, nil))
+	credentials := failingCredentials{fakeCredentials: newFakeCredentials(), err: errStoreRefused}
+
+	rec := call(t, serverWithCredentialsLogging(t, credentials, &grantingStore{}, logger).Handler(),
+		http.MethodGet, credentialsPath, "")
+
+	body := requireProblem(t, rec, http.StatusInternalServerError)
+	require.NotContains(t, rec.Body.String(), errStoreRefused.Error(), "the answer carried the cause")
+
+	var line logLine
+
+	for raw := range bytes.Lines(written.Bytes()) {
+		var candidate logLine
+
+		require.NoError(t, json.Unmarshal(raw, &candidate))
+
+		if candidate.TraceID == body.TraceID {
+			line = candidate
+
+			break
+		}
+	}
+
+	require.Equal(t, body.TraceID, line.TraceID, "no log line carries the trace id the answer sent")
+	require.Contains(t, line.Error, errStoreRefused.Error(), "the log line under the trace id lost the cause")
 }

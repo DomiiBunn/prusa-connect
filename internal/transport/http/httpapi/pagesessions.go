@@ -122,7 +122,7 @@ func registerOpenPageSession(api huma.API, cfg Config, limiter *addressLimiter) 
 		case errors.Is(err, ErrPageSessionLimited):
 			return nil, pageSessionLimited.New("this credential has opened too many page sessions from this address")
 		case err != nil:
-			return nil, credentialFault(err, "open the page session")
+			return nil, serverFault(err, "open the page session")
 		}
 
 		cookie := pageSessionCookie(cfg, opened)

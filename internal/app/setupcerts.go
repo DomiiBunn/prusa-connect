@@ -85,9 +85,7 @@ func (f *firstRun) CreateCertificates(
 
 	made, err := writeCertificates(certsPath(f.configPath), hosts, time.Now())
 	if err != nil {
-		f.logger.ErrorContext(ctx, "the first run could not write its certificates", "error", err.Error())
-
-		return httpapi.SetupCertificates{}, httpfault.Unexpected("create the certificates")
+		return httpapi.SetupCertificates{}, httpfault.Unexpected("create the certificates").Wrap(err)
 	}
 
 	f.logger.InfoContext(ctx, "the first run created certificates", "names", hosts, "folder", made.Folder)

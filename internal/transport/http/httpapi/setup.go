@@ -366,7 +366,7 @@ func registerSetupState(api huma.API, cfg Config) {
 	}, func(ctx context.Context, _ *struct{}) (*setupStateOutput, error) {
 		state, err := cfg.Setup.State(ctx)
 		if err != nil {
-			return nil, setupFault(err, "read whether this server has been set up")
+			return nil, serverFault(err, "read whether this server has been set up")
 		}
 
 		if state.Modules == nil {
@@ -420,7 +420,7 @@ func registerRecordSetup(api huma.API, cfg Config) {
 
 		result, err := cfg.Setup.Record(ctx, decision)
 		if err != nil {
-			return nil, withRetryAfter(setupFault(err, "record what this server does about identity"))
+			return nil, withRetryAfter(serverFault(err, "record what this server does about identity"))
 		}
 
 		out := &setupOutput{Status: http.StatusOK}
@@ -567,18 +567,6 @@ func withRetryAfter(err error) error {
 	}
 
 	return huma.ErrorWithHeaders(err, http.Header{"Retry-After": []string{wait.String()}})
-}
-
-// setupFault keeps a refusal the implementation raised and turns anything else
-// into this server's own failure. An overlay that could not be written is not
-// the caller's mistake, and reporting it as one sends them rewriting a password
-// that was fine.
-func setupFault(err error, doing string) error {
-	if raised, ok := errors.AsType[*fault.Fault](err); ok {
-		return raised
-	}
-
-	return httpfault.Unexpected(doing).Wrap(err)
 }
 
 // setupOpenOperations are the operations a pending install still answers. They

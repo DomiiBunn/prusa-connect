@@ -729,7 +729,7 @@ func TestAnUnexpectedSetupFailureKeepsItsCause(t *testing.T) {
 	t.Parallel()
 
 	cause := errors.New("open /etc/prusa-connect/config.yaml: permission denied")
-	err := setupFault(cause, "read the configuration the first run asks for")
+	err := serverFault(cause, "read the configuration the first run asks for")
 
 	require.ErrorIs(t, err, cause)
 	require.Contains(t, err.Error(), "permission denied")

@@ -2,7 +2,6 @@ package httpapi
 
 import (
 	"context"
-	"errors"
 	"net/http"
 	"time"
 
@@ -171,19 +170,19 @@ func registerCreatePairing(api huma.API, cfg Config) {
 		// refused.
 		generation, err := cfg.Pairings.Fence(ctx, principal.String())
 		if err != nil {
-			return nil, pairingFault(err, "read the principal's generation")
+			return nil, serverFault(err, "read the principal's generation")
 		}
 
 		creatorGeneration, err := cfg.Pairings.Fence(ctx, creator.String())
 		if err != nil {
-			return nil, pairingFault(err, "read the caller's generation")
+			return nil, serverFault(err, "read the caller's generation")
 		}
 
 		root := callerRoot(ctx, cfg, creator)
 
 		rootGeneration, err := cfg.Pairings.Fence(ctx, root)
 		if err != nil {
-			return nil, pairingFault(err, "read the generation of the caller's root")
+			return nil, serverFault(err, "read the generation of the caller's root")
 		}
 
 		if !cfg.Credentials.SignedIn(requestFrom(ctx)) {
@@ -204,7 +203,7 @@ func registerCreatePairing(api huma.API, cfg Config) {
 			RootGeneration: &rootGeneration,
 		})
 		if err != nil {
-			return nil, pairingFault(err, "write the pairing")
+			return nil, serverFault(err, "write the pairing")
 		}
 
 		return &createPairingOutput{Status: http.StatusCreated, Body: paired}, nil
@@ -229,7 +228,7 @@ func registerListPairings(api huma.API, cfg Config) {
 
 		items, err := cfg.Pairings.List(ctx, in.Provider)
 		if err != nil {
-			return nil, pairingFault(err, "list the pairings")
+			return nil, serverFault(err, "list the pairings")
 		}
 
 		out := &listPairingsOutput{}
@@ -261,7 +260,7 @@ func registerDeletePairing(api huma.API, cfg Config) {
 		}
 
 		if err := cfg.Pairings.Unpair(ctx, in.Provider, in.Subject); err != nil {
-			return nil, pairingFault(err, "remove the pairing")
+			return nil, serverFault(err, "remove the pairing")
 		}
 
 		return &deletePairingOutput{Status: http.StatusNoContent}, nil
@@ -287,16 +286,6 @@ func pairablePrincipal(spelling string) (authz.Subject, error) {
 	}
 
 	return subject, nil
-}
-
-// pairingFault keeps a refusal the implementation raised and turns anything
-// else into the server's own failure, for the reason credentialFault gives.
-func pairingFault(err error, doing string) error {
-	if raised, ok := errors.AsType[*fault.Fault](err); ok {
-		return raised
-	}
-
-	return httpfault.Unexpected(doing)
 }
 
 // UnknownPairing is the refusal for a subject no pairing names. It is exported

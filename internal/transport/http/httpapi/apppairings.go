@@ -473,7 +473,7 @@ func decideAppPairing(
 	// and the collection leaves the credential refused.
 	fence, err := cfg.Credentials.Fence(ctx, who.String(), who.String(), root)
 	if err != nil {
-		return nil, credentialFault(err, "read the credential generations")
+		return nil, serverFault(err, "read the credential generations")
 	}
 
 	if err = requireSignedIn(ctx, cfg); err != nil {
@@ -558,7 +558,7 @@ func appPairingFault(err error, doing string) error {
 		return appPairingClosed.New("the pairing is no longer waiting for a decision")
 	}
 
-	return credentialFault(err, doing)
+	return serverFault(err, doing)
 }
 
 // decisionFault is appPairingFault for a person reading or deciding a pairing,
