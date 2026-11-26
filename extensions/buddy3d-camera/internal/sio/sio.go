@@ -241,6 +241,11 @@ func (h *session) write(typ websocket.MessageType, b []byte) error {
 	h.writeMu.Lock()
 	defer h.writeMu.Unlock()
 
+	return h.writeLocked(typ, b)
+}
+
+// writeLocked writes one frame while the caller holds writeMu.
+func (h *session) writeLocked(typ websocket.MessageType, b []byte) error {
 	ctx, cancel := context.WithTimeout(context.Background(), writeTimeout)
 	defer cancel()
 
@@ -250,9 +255,12 @@ func (h *session) write(typ websocket.MessageType, b []byte) error {
 func (h *session) text(msg string) { _ = h.write(websocket.MessageText, []byte(msg)) }
 
 // emit sends a binary event with one attachment and asks for an ack, which
-// goes to acked when it is given.
+// goes to acked when it is given. The header and its attachment go out under
+// one hold of writeMu, so no other frame lands between them.
 func (h *session) emit(event string, payload []byte, acked ...chan<- int) (int, error) {
 	h.writeMu.Lock()
+	defer h.writeMu.Unlock()
+
 	h.nextAck++
 	id := h.nextAck
 
@@ -263,18 +271,17 @@ func (h *session) emit(event string, payload []byte, acked ...chan<- int) (int, 
 
 		h.waiting[id] = acked[0]
 	}
-	h.writeMu.Unlock()
 
 	header, err := json.Marshal([]any{event, map[string]any{"_placeholder": true, "num": 0}})
 	if err != nil {
 		return id, err
 	}
 
-	if err = h.write(websocket.MessageText, []byte("451-"+strconv.Itoa(id)+string(header))); err != nil {
+	if err = h.writeLocked(websocket.MessageText, []byte("451-"+strconv.Itoa(id)+string(header))); err != nil {
 		return id, err
 	}
 
-	return id, h.write(websocket.MessageBinary, payload)
+	return id, h.writeLocked(websocket.MessageBinary, payload)
 }
 
 func (h *session) unwait(id int) {

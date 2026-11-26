@@ -4,6 +4,12 @@ What changed in this module, newest first. The top heading is the version
 `module.yaml` declares and the version this process reports to the host, and
 `changelog_test.go` fails when the three differ.
 
+## 0.8.1 - 2026-11-26
+
+### Fixed
+
+- Two messages sent to a camera at the same moment, such as new settings while the camera connects, no longer mix their contents. Each one reached the camera split, and the camera could read the settings of one message as part of the other.
+
 ## 0.8.0 - 2026-11-16
 
 ### Added

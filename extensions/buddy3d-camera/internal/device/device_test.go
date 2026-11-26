@@ -347,6 +347,57 @@ func TestACameraIsToldItsOwnInterval(t *testing.T) {
 	}
 }
 
+// Events sent at once never interleave on the wire: each header is followed by
+// its own attachment, or the camera reads one event's payload as another's.
+func TestEventsSentAtOnceKeepTheirAttachments(t *testing.T) {
+	t.Parallel()
+
+	cameras, err := store.Open(t.TempDir(), time.Now)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	paired, err := cameras.Pair("bed-cam", "printer-1", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	service := device.New(cameras, &core{}, 30, slog.New(slog.DiscardHandler))
+	server := httptest.NewTLSServer(service.Handler())
+	t.Cleanup(server.Close)
+
+	camera := dial(t, server)
+	camera.emit("1", "camera_authentication", auth(paired.Token))
+
+	for range 7 { // the ack, then the configuration and two triggers, each a header and a payload
+		_ = camera.read()
+	}
+
+	const senders = 50
+
+	var wg sync.WaitGroup
+	for range senders {
+		wg.Go(func() { _ = service.Configure("bed-cam") })
+	}
+
+	// Each Configure sends two events, each a header and an attachment.
+	for frame := range senders * 2 * 2 {
+		ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
+		typ, b, readErr := camera.conn.Read(ctx)
+		cancel()
+
+		if readErr != nil {
+			t.Fatalf("frame %d: %v", frame, readErr)
+		}
+
+		if header := frame%2 == 0; header != (typ == websocket.MessageText && strings.HasPrefix(string(b), "451-")) {
+			t.Fatalf("frame %d is %v %q, want a header: %v", frame, typ, b, header)
+		}
+	}
+
+	wg.Wait()
+}
+
 // A turn reaches the camera as one rotation, waits for its ack and asks for
 // a picture after it. A command the camera acks with a code other than done
 // is answered as refused, with the camera's code.
