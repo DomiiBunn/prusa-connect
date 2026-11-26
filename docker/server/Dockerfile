@@ -233,7 +233,8 @@ RUN export GOOS="$TARGETOS" GOARCH="$TARGETARCH" GOARM="${TARGETVARIANT#v}" && \
 
 # The Buddy3D camera release, laid out the same way.
 COPY --from=extensions-builder /app/extensions/buddy3d-camera/ui/dist ./extensions/buddy3d-camera/ui/dist
-RUN BINARY="/tmp/buddy3d-camera_$(go env GOOS)_$(go env GOARCH)" && \
+RUN export GOOS="$TARGETOS" GOARCH="$TARGETARCH" GOARM="${TARGETVARIANT#v}" && \
+    BINARY="/tmp/buddy3d-camera_$(go env GOOS)_$(go env GOARCH)" && \
     CGO_ENABLED=0 go -C extensions/buddy3d-camera build -o "$BINARY" . && \
     sh extensions/scripts/pack-release.sh extensions/buddy3d-camera/ui/dist "$BINARY" /opt/modules/buddy3d-camera
 
@@ -270,6 +271,7 @@ COPY --from=builder /opt/modules/buddy-debug-logs /opt/modules/buddy-debug-logs
 COPY --from=builder /opt/modules/threemf /opt/modules/threemf
 COPY --from=builder /opt/modules/server-slicing /opt/modules/server-slicing
 COPY --from=builder /opt/modules/materials /opt/modules/materials
+COPY --from=builder /opt/modules/buddy3d-camera /opt/modules/buddy3d-camera
 COPY --from=builder /opt/modules/fractal /opt/modules/fractal
 COPY --from=builder /opt/modules/simple-queue /opt/modules/simple-queue
 
