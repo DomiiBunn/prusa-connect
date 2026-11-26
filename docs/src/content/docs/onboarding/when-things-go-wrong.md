@@ -42,7 +42,7 @@ code. Fall back to `title` for a code the client does not know, and quote
 ```
 
 Over HTTP it is written by `writeProblem`
-(`internal/transport/http/httpapi/problem.go:279`). The body is:
+(`internal/transport/http/httpapi/problem.go:290`). The body is:
 
 ```json
 {
@@ -67,7 +67,7 @@ does not know them is required to ignore.
 
 The trace id comes from the request's `Traceparent` header when it is
 well-formed, and is minted otherwise
-(`internal/transport/http/httpapi/problem.go:361`).
+(`internal/transport/http/httpapi/problem.go:372`).
 
 ### Redaction
 

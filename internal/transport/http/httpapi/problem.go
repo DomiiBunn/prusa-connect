@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log/slog"
 	"net/http"
 	"reflect"
@@ -192,9 +193,19 @@ func faultFor(ctx context.Context, status int, msg string, errs []error) *fault.
 // that could not be read or written is not the caller's mistake, and reporting
 // it as one sends them looking at what they typed. The answer stays redacted;
 // the cause reaches the operator in the line logUnexpected writes.
+//
+// A cancellation is passed on unwrapped, so faultFor can tell a caller who hung
+// up from a failure: only faultFor sees the request's context. A deadline is
+// not, because faultFor reads every deadline as the request's own budget, and
+// a store's own timeout would then reach the caller as REQUEST_TIMED_OUT with
+// no log line.
 func serverFault(err error, doing string) error {
 	if raised, ok := errors.AsType[*fault.Fault](err); ok {
 		return raised
+	}
+
+	if errors.Is(err, context.Canceled) {
+		return fmt.Errorf("%s: %w", doing, err)
 	}
 
 	return httpfault.Unexpected(doing).Wrap(err)

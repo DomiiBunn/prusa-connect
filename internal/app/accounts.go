@@ -196,6 +196,9 @@ func (a accounts) ResetPassword(ctx context.Context, id, next string) error {
 func (a accounts) endCredentials(ctx context.Context, id string) error {
 	ended, err := revokeAccountCredentials(ctx, a.verifier, a.pairings, id)
 	if err != nil {
+		// A cancellation stays a failure here, unlike in accountRefusal. The
+		// password has changed and the old credentials may still work, which an
+		// operator has to see even when the caller has left.
 		return httpfault.Unexpected("end the sessions and api credentials of the account that changed").Wrap(err)
 	}
 
@@ -450,6 +453,12 @@ func accountRefusal(err error) error {
 
 	if raised, ok := errors.AsType[*fault.Fault](err); ok {
 		return raised
+	}
+
+	// A caller who hung up is not a failure of this store. The HTTP surface
+	// tells the two apart, and only while the cancellation is not a fault.
+	if errors.Is(err, context.Canceled) {
+		return fmt.Errorf("read or write the account store: %w", err)
 	}
 
 	return httpfault.Unexpected("read or write the account store").Wrap(err)

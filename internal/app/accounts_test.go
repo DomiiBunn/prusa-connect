@@ -3,6 +3,7 @@ package app
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -803,4 +804,26 @@ func TestAnAccountStoreThatCannotBeWrittenKeepsItsCause(t *testing.T) {
 	_, err = local.Create(t.Context(), httpapi.NewAccount{Username: "grace@example.com", Password: testPassword})
 	requireFaultCode(t, err, httpfault.CodeUnexpected())
 	require.ErrorContains(t, err, "database is closed")
+}
+
+// TestACallerThatLeavesDuringAnAccountCallIsNotAFailure is the account store
+// answering a request whose caller hung up. The cancellation reaches the HTTP
+// surface as itself, so it is answered as an abandoned request and not logged
+// as a failure of this server.
+func TestACallerThatLeavesDuringAnAccountCallIsNotAFailure(t *testing.T) {
+	t.Parallel()
+
+	local, _ := wiredAccounts(t, localCore(t))
+
+	_, err := local.Setup(t.Context(), httpapi.NewAccount{Username: testOwner, Password: testPassword})
+	require.NoError(t, err)
+
+	caller, hangUp := context.WithCancel(t.Context())
+	hangUp()
+
+	_, err = local.List(caller)
+	require.ErrorIs(t, err, context.Canceled)
+
+	_, isFault := errors.AsType[*fault.Fault](err)
+	require.False(t, isFault, "the cancellation was turned into a fault, which the HTTP surface logs as a failure")
 }

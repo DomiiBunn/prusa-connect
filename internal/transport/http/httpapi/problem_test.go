@@ -132,6 +132,42 @@ func TestACallerThatHangsUpIsNotAnUnexpectedFailure(t *testing.T) {
 		"a caller that hung up was logged as a failure of this server")
 }
 
+// TestACallerThatHangsUpDuringAStoreCallIsNotAnUnexpectedFailure is the same
+// hang-up reaching the answer through serverFault, as it does when the caller
+// leaves while an account or credential store is busy.
+func TestACallerThatHangsUpDuringAStoreCallIsNotAnUnexpectedFailure(t *testing.T) {
+	t.Parallel()
+
+	var written bytes.Buffer
+
+	logger := slog.New(slog.NewJSONHandler(&written, nil))
+
+	caller, hangUp := context.WithCancel(t.Context())
+
+	handler := newLoggingHarness(t, defaultBodyLimit, logger, func(api huma.API) {
+		register(api, huma.Operation{
+			OperationID: "get-listing",
+			Method:      http.MethodGet,
+			Path:        "/listing",
+			Summary:     "lists while the caller leaves",
+			Security:    noSecurity,
+		}, func(ctx context.Context, _ *struct{}) (*struct{}, error) {
+			hangUp()
+			<-ctx.Done()
+
+			return nil, serverFault(fmt.Errorf("list the credentials: %w", ctx.Err()), "list the credentials")
+		})
+	})
+
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, httptest.NewRequestWithContext(caller, http.MethodGet, "/listing", nil))
+
+	body := requireProblem(t, rec, httpfault.RequestAbandoned().Status())
+	require.Equal(t, httpfault.CodeRequestAbandoned(), body.Code)
+	require.NotContains(t, written.String(), httpfault.CodeUnexpected().String(),
+		"a caller that hung up was logged as a failure of this server")
+}
+
 // TestAContextTheHandlerCancelledItselfIsStillUnexpected is the other half. A
 // handler that cancels a context of its own, while the caller still waits, has
 // failed, and reading that as a caller who left would hide the failure.
@@ -163,6 +199,39 @@ func TestAContextTheHandlerCancelledItselfIsStillUnexpected(t *testing.T) {
 	require.Equal(t, httpfault.CodeUnexpected(), body.Code)
 	require.Contains(t, written.String(), httpfault.CodeUnexpected().String(),
 		"a failure the server caused itself was not logged")
+}
+
+// TestAStoreCallTheHandlerCancelledItselfNamesWhatItWasDoing is that failure
+// reaching the answer through serverFault. The cancellation passes through
+// unwrapped, and the log line still says which step it stopped.
+func TestAStoreCallTheHandlerCancelledItselfNamesWhatItWasDoing(t *testing.T) {
+	t.Parallel()
+
+	var written bytes.Buffer
+
+	logger := slog.New(slog.NewJSONHandler(&written, nil))
+
+	handler := newLoggingHarness(t, defaultBodyLimit, logger, func(api huma.API) {
+		register(api, huma.Operation{
+			OperationID: "get-self-cancelled-listing",
+			Method:      http.MethodGet,
+			Path:        "/self-cancelled-listing",
+			Summary:     "cancels its own store call",
+			Security:    noSecurity,
+		}, func(ctx context.Context, _ *struct{}) (*struct{}, error) {
+			own, cancel := context.WithCancel(ctx)
+			cancel()
+
+			return nil, serverFault(own.Err(), "list the credentials")
+		})
+	})
+
+	rec := call(t, handler, http.MethodGet, "/self-cancelled-listing", "")
+
+	body := requireProblem(t, rec, http.StatusInternalServerError)
+	require.Equal(t, httpfault.CodeUnexpected(), body.Code)
+	require.Contains(t, written.String(), "list the credentials: context canceled",
+		"the log line lost the step the cancelled call was doing")
 }
 
 // TestAPanicIsLoggedWithItsCauseAndItsStack checks the other way into the
